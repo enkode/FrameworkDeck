@@ -1,0 +1,3 @@
+[submodule "repo/framework-control"]
+	path = repo/framework-control
+	url = https://github.com/ozturkkl/framework-control.git
