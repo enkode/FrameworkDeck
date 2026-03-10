@@ -25,16 +25,14 @@
   --white:       #f4f0e8;
 
   /* Oscilloscope channel colors */
-  --ch1:         #e8e0d0;
-  --ch1-glow:    rgba(232,224,208,0.5);
-  --ch2:         #cc2222;
-  --ch2-glow:    rgba(204,34,34,0.6);
-  --ch3:         #2255aa;
-  --ch3-glow:    rgba(34,85,170,0.6);
-  --ch4:         #c09060;
-  --ch4-glow:    rgba(192,144,96,0.5);
-  --ch5:         #448844;
-  --ch5-glow:    rgba(68,136,68,0.5);
+  --ch1:      #e8e0d0; --ch1-glow: rgba(232,224,208,0.5);
+  --ch2:      #cc2222; --ch2-glow: rgba(204,34,34,0.6);
+  --ch3:      #2255aa; --ch3-glow: rgba(34,85,170,0.6);
+  --ch4:      #c09060; --ch4-glow: rgba(192,144,96,0.5);
+  --ch5:      #448844; --ch5-glow: rgba(68,136,68,0.5);
+  --ch6:      #aa44aa; --ch6-glow: rgba(170,68,170,0.5);
+  --ch7:      #44aaaa; --ch7-glow: rgba(68,170,170,0.5);
+  --ch8:      #aaaa44; --ch8-glow: rgba(170,170,68,0.5);
 }
 
 /* Phosphor Green theme */
@@ -48,13 +46,22 @@
   --cream-dim:   #009926;
   --cream-faint: #001a08;
   --red:         #44ff88;
+  --red-dim:     #1a6633;
   --blue:        #00ccff;
+  --blue-dim:    #004455;
   --tan:         #80ff80;
-  --ch1:         #00ff41;
-  --ch2:         #80ff80;
-  --ch3:         #00cc33;
-  --ch4:         #66ff44;
-  --ch5:         #40ee40;
+  --tan-dim:     #336633;
+  --green:       #00ff41;
+  --gray:        #33aa44;
+
+  --ch1:      #00ff41; --ch1-glow: rgba(0,255,65,0.6);
+  --ch2:      #80ff80; --ch2-glow: rgba(128,255,128,0.5);
+  --ch3:      #00cc33; --ch3-glow: rgba(0,204,51,0.5);
+  --ch4:      #66ff44; --ch4-glow: rgba(102,255,68,0.5);
+  --ch5:      #40ee40; --ch5-glow: rgba(64,238,64,0.5);
+  --ch6:      #aaffaa; --ch6-glow: rgba(170,255,170,0.5);
+  --ch7:      #00ffcc; --ch7-glow: rgba(0,255,204,0.5);
+  --ch8:      #ccff00; --ch8-glow: rgba(204,255,0,0.5);
 }
 
 /* Amber terminal theme */
@@ -68,13 +75,22 @@
   --cream-dim:   #996600;
   --cream-faint: #1a1100;
   --red:         #ff5500;
+  --red-dim:     #662200;
   --blue:        #ffdd00;
+  --blue-dim:    #665500;
   --tan:         #cc8800;
-  --ch1:         #ffaa00;
-  --ch2:         #ff6600;
-  --ch3:         #ffdd00;
-  --ch4:         #cc8800;
-  --ch5:         #ff4400;
+  --tan-dim:     #553300;
+  --green:       #ffcc00;
+  --gray:        #886600;
+
+  --ch1:      #ffaa00; --ch1-glow: rgba(255,170,0,0.6);
+  --ch2:      #ff6600; --ch2-glow: rgba(255,102,0,0.6);
+  --ch3:      #ffdd00; --ch3-glow: rgba(255,221,0,0.5);
+  --ch4:      #cc8800; --ch4-glow: rgba(204,136,0,0.5);
+  --ch5:      #ff4400; --ch5-glow: rgba(255,68,0,0.5);
+  --ch6:      #ffcc44; --ch6-glow: rgba(255,204,68,0.5);
+  --ch7:      #ff8844; --ch7-glow: rgba(255,136,68,0.5);
+  --ch8:      #ffee88; --ch8-glow: rgba(255,238,136,0.5);
 }
 
 /* Framework Blue theme */
@@ -88,13 +104,46 @@
   --cream-dim:   #3a6090;
   --cream-faint: #0f1f35;
   --red:         #cc2244;
+  --red-dim:     #551122;
   --blue:        #4090e0;
+  --blue-dim:    #1a3560;
   --tan:         #60c0ff;
-  --ch1:         #7ab8f0;
-  --ch2:         #cc2244;
-  --ch3:         #4090e0;
-  --ch4:         #60c0ff;
-  --ch5:         #80e080;
+  --tan-dim:     #204860;
+  --green:       #40dd80;
+  --gray:        #3a6090;
+
+  --ch1:      #7ab8f0; --ch1-glow: rgba(122,184,240,0.5);
+  --ch2:      #cc2244; --ch2-glow: rgba(204,34,68,0.6);
+  --ch3:      #4090e0; --ch3-glow: rgba(64,144,224,0.5);
+  --ch4:      #60c0ff; --ch4-glow: rgba(96,192,255,0.5);
+  --ch5:      #80e080; --ch5-glow: rgba(128,224,128,0.5);
+  --ch6:      #bb88ff; --ch6-glow: rgba(187,136,255,0.5);
+  --ch7:      #40ddcc; --ch7-glow: rgba(64,221,204,0.5);
+  --ch8:      #ffdd44; --ch8-glow: rgba(255,221,68,0.5);
+}
+
+/* ── Accessibility ──────────────────────────────────────────────── */
+
+/* Font scaling — controlled by --font-scale CSS variable (default 1) */
+:root {
+  --font-scale: 1;
+}
+
+/* High contrast mode — increased border and text visibility */
+[data-high-contrast="true"] {
+  --border: #444444;
+  --border-2: #555555;
+  --gray: #888888;
+  --cream-dim: #bbaa99;
+}
+
+/* Reduced motion — disable all animations and transitions */
+[data-reduced-motion="true"] *,
+[data-reduced-motion="true"] *::before,
+[data-reduced-motion="true"] *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
 }
 
 /* ── Reset ───────────────────────────────────────────────────────── */
@@ -106,7 +155,7 @@ html, body, #root {
   background: var(--bg);
   color: var(--cream);
   font-family: 'JetBrains Mono', 'Courier New', monospace;
-  font-size: 13px;
+  font-size: calc(13px * var(--font-scale, 1));
   line-height: 1.4;
   -webkit-font-smoothing: antialiased;
 }

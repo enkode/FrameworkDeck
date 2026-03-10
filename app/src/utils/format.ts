@@ -1,6 +1,16 @@
 export const fmtTemp = (c: number | undefined | null): string =>
   c != null ? `${Math.round(c)}°` : '--°'
 
+// Unit-aware temperature formatter: converts to °F when fahrenheit=true
+export const fmtTempUnit = (c: number | undefined | null, fahrenheit = false): string => {
+  if (c == null) return fahrenheit ? '--°F' : '--°C'
+  if (fahrenheit) return `${Math.round(c * 9 / 5 + 32)}°F`
+  return `${Math.round(c)}°C`
+}
+
+// Convert °C to °F
+export const cToF = (c: number): number => c * 9 / 5 + 32
+
 export const fmtRPM = (rpm: number | undefined | null): string =>
   rpm != null ? `${Math.round(rpm)}` : '---'
 

@@ -1,12 +1,13 @@
 import { useRef, useEffect, useCallback, useState } from 'react'
 import type { TelemetrySample } from '../../api/types'
 import type { Channel } from '../../config/channels'
+import { useAppStore } from '../../store/app'
 
 interface Props {
   history: TelemetrySample[]
   channels: Channel[]
   activeChannels: string[]
-  timeWindow: number // seconds
+  timeWindow: number
   paused: boolean
 }
 
@@ -17,11 +18,22 @@ interface HoverInfo {
   timeAgo: string
 }
 
+function resolveCssVar(varName: string): string {
+  return getComputedStyle(document.documentElement).getPropertyValue(varName).trim() || '#888888'
+}
+
+const MIN_LANE_H = 90  // minimum pixels per channel lane before scrolling kicks in
+
 export function OscilloscopeView({ history, channels, activeChannels, timeWindow, paused }: Props) {
+  const { tempWarnC, useFahrenheit, yAutoScale } = useAppStore()
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const [hover, setHover] = useState<HoverInfo | null>(null)
+  const [canvasHeight, setCanvasHeight] = useState(0)
+
   const activeChList = channels.filter((c) => activeChannels.includes(c.id))
+
+  const cToF = (c: number) => c * 9 / 5 + 32
 
   const draw = useCallback(() => {
     const canvas = canvasRef.current
@@ -42,13 +54,11 @@ export function OscilloscopeView({ history, channels, activeChannels, timeWindow
     const startMs = now - timeWindow * 1000
     const samples = history.filter((s) => s.ts_ms >= startMs)
 
-    // Layout constants
-    const LEFT_PAD = 52  // y-axis labels
-    const RIGHT_PAD = 64 // current value labels
+    const LEFT_PAD = 52
+    const RIGHT_PAD = 64
     const traceW = W - LEFT_PAD - RIGHT_PAD
     const LANE_H = H / channelCount
 
-    // Clear
     ctx.fillStyle = '#0d0d0d'
     ctx.fillRect(0, 0, W, H)
 
@@ -58,7 +68,29 @@ export function OscilloscopeView({ history, channels, activeChannels, timeWindow
       const BOT_PAD = 20
       const traceH = LANE_H - TOP_PAD - BOT_PAD
 
-      // Lane separator (not on first)
+      // Compute display min/max — auto-scale zooms around actual data
+      let dispMin = ch.min
+      let dispMax = ch.max
+      if (yAutoScale && samples.length > 1) {
+        const vals = samples
+          .map((s) => ch.getValue(s))
+          .filter((v): v is number => v !== null)
+        if (vals.length > 0) {
+          const dataMin = Math.min(...vals)
+          const dataMax = Math.max(...vals)
+          const dataRange = Math.max(dataMax - dataMin, 1)
+          const pad = Math.max(dataRange * 0.25, ch.unit === 'rpm' ? 100 : 2)
+          dispMin = Math.max(ch.min, dataMin - pad)
+          dispMax = Math.min(ch.max, dataMax + pad)
+          if (dispMax - dispMin < 2) { dispMin -= 1; dispMax += 1 }
+        }
+      }
+      const dispRange = Math.max(dispMax - dispMin, 0.001)
+
+      const isTemp = ch.unit === '°C'
+      const showF = isTemp && useFahrenheit
+
+      // Lane separator
       if (chIdx > 0) {
         ctx.strokeStyle = '#222222'
         ctx.lineWidth = 1
@@ -68,7 +100,7 @@ export function OscilloscopeView({ history, channels, activeChannels, timeWindow
         ctx.stroke()
       }
 
-      // Graticule horizontal lines (4 divisions)
+      // Graticule
       ctx.strokeStyle = '#1a1a1a'
       ctx.lineWidth = 0.5
       for (let i = 1; i < 4; i++) {
@@ -78,8 +110,6 @@ export function OscilloscopeView({ history, channels, activeChannels, timeWindow
         ctx.lineTo(LEFT_PAD + traceW, y)
         ctx.stroke()
       }
-
-      // Graticule vertical lines (10 divisions)
       for (let i = 1; i < 10; i++) {
         const x = LEFT_PAD + (traceW * i) / 10
         ctx.beginPath()
@@ -88,26 +118,24 @@ export function OscilloscopeView({ history, channels, activeChannels, timeWindow
         ctx.stroke()
       }
 
-      // Y-axis scale labels
+      // Y-axis labels
       ctx.fillStyle = '#444444'
       ctx.font = '9px JetBrains Mono, monospace'
       ctx.textAlign = 'right'
-      const range = ch.max - ch.min
-      const unitSuffix = ch.unit === '°C' ? '°' : ch.unit === 'rpm' ? 'k' : ch.unit
-      if (ch.unit === 'rpm') {
-        ctx.fillText(`${(ch.max / 1000).toFixed(1)}k`, LEFT_PAD - 4, laneTop + TOP_PAD + 4)
-        ctx.fillText(`${((ch.min + range / 2) / 1000).toFixed(1)}k`, LEFT_PAD - 4, laneTop + TOP_PAD + traceH / 2 + 4)
-        ctx.fillText('0', LEFT_PAD - 4, laneTop + TOP_PAD + traceH + 4)
-      } else {
-        ctx.fillText(`${ch.max}${unitSuffix}`, LEFT_PAD - 4, laneTop + TOP_PAD + 4)
-        ctx.fillText(`${Math.round(ch.min + range / 2)}${unitSuffix}`, LEFT_PAD - 4, laneTop + TOP_PAD + traceH / 2 + 4)
-        ctx.fillText(`${ch.min}${unitSuffix}`, LEFT_PAD - 4, laneTop + TOP_PAD + traceH + 4)
-      }
 
-      // Channel label (left column)
+      const fmtLabel = (v: number) => {
+        if (ch.unit === 'rpm') return v >= 1000 ? `${(v / 1000).toFixed(1)}k` : `${Math.round(v)}`
+        return showF ? `${Math.round(cToF(v))}°` : `${Math.round(v)}°`
+      }
+      ctx.fillText(fmtLabel(dispMax), LEFT_PAD - 4, laneTop + TOP_PAD + 4)
+      ctx.fillText(fmtLabel(dispMin + dispRange / 2), LEFT_PAD - 4, laneTop + TOP_PAD + traceH / 2 + 4)
+      ctx.fillText(fmtLabel(dispMin), LEFT_PAD - 4, laneTop + TOP_PAD + traceH + 4)
+
+      // Channel label
+      const chColor = resolveCssVar(ch.colorVar)
       ctx.save()
-      ctx.fillStyle = ch.color
-      ctx.font = `bold 10px JetBrains Mono, monospace`
+      ctx.fillStyle = chColor
+      ctx.font = 'bold 10px JetBrains Mono, monospace'
       ctx.textAlign = 'left'
       ctx.fillText(ch.label, 4, laneTop + LANE_H / 2 + 3)
       ctx.restore()
@@ -120,9 +148,11 @@ export function OscilloscopeView({ history, channels, activeChannels, timeWindow
 
       // Draw trace
       if (samples.length > 1) {
+        const traceColor = resolveCssVar(ch.colorVar)
+        const glowColor = resolveCssVar(ch.glowVar)
         ctx.beginPath()
-        ctx.strokeStyle = ch.color
-        ctx.shadowColor = ch.glowColor
+        ctx.strokeStyle = traceColor
+        ctx.shadowColor = glowColor
         ctx.shadowBlur = 4
         ctx.lineWidth = 1.5
         ctx.lineJoin = 'round'
@@ -131,22 +161,34 @@ export function OscilloscopeView({ history, channels, activeChannels, timeWindow
         for (const sample of samples) {
           const val = ch.getValue(sample)
           if (val === null) continue
-
           const xFrac = (sample.ts_ms - startMs) / (timeWindow * 1000)
           const x = LEFT_PAD + xFrac * traceW
-          const clamped = Math.max(ch.min, Math.min(ch.max, val))
-          const yFrac = 1 - (clamped - ch.min) / (ch.max - ch.min)
+          const clamped = Math.max(dispMin, Math.min(dispMax, val))
+          const yFrac = 1 - (clamped - dispMin) / dispRange
           const y = laneTop + TOP_PAD + traceH * yFrac
-
-          if (!started) {
-            ctx.moveTo(x, y)
-            started = true
-          } else {
-            ctx.lineTo(x, y)
-          }
+          if (!started) { ctx.moveTo(x, y); started = true }
+          else { ctx.lineTo(x, y) }
         }
         ctx.stroke()
         ctx.shadowBlur = 0
+      }
+
+      // Warning threshold line (temp channels)
+      if (isTemp && tempWarnC >= dispMin && tempWarnC <= dispMax) {
+        const warnYFrac = 1 - (tempWarnC - dispMin) / dispRange
+        const warnY = laneTop + TOP_PAD + traceH * warnYFrac
+        ctx.save()
+        ctx.strokeStyle = '#cc2222'
+        ctx.globalAlpha = 0.35
+        ctx.setLineDash([3, 5])
+        ctx.lineWidth = 0.8
+        ctx.beginPath()
+        ctx.moveTo(LEFT_PAD, warnY)
+        ctx.lineTo(LEFT_PAD + traceW, warnY)
+        ctx.stroke()
+        ctx.setLineDash([])
+        ctx.globalAlpha = 1
+        ctx.restore()
       }
 
       ctx.restore()
@@ -156,17 +198,20 @@ export function OscilloscopeView({ history, channels, activeChannels, timeWindow
       if (lastSample) {
         const curVal = ch.getValue(lastSample)
         if (curVal !== null) {
-          ctx.fillStyle = ch.color
+          const displayVal = showF
+            ? `${Math.round(cToF(curVal))}°F`
+            : ch.formatValue(curVal)
+          ctx.fillStyle = chColor
           ctx.font = '11px JetBrains Mono, monospace'
           ctx.textAlign = 'left'
-          ctx.fillText(ch.formatValue(curVal), W - RIGHT_PAD + 6, laneTop + LANE_H / 2 + 4)
+          ctx.fillText(displayVal, W - RIGHT_PAD + 6, laneTop + LANE_H / 2 + 4)
 
-          // Dashed level line from trace edge to readout
-          const clamped = Math.max(ch.min, Math.min(ch.max, curVal))
-          const yFrac = 1 - (clamped - ch.min) / (ch.max - ch.min)
+          // Level line
+          const clamped = Math.max(dispMin, Math.min(dispMax, curVal))
+          const yFrac = 1 - (clamped - dispMin) / dispRange
           const levelY = laneTop + TOP_PAD + traceH * yFrac
           ctx.save()
-          ctx.strokeStyle = ch.color
+          ctx.strokeStyle = chColor
           ctx.globalAlpha = 0.3
           ctx.setLineDash([2, 4])
           ctx.lineWidth = 0.8
@@ -181,21 +226,19 @@ export function OscilloscopeView({ history, channels, activeChannels, timeWindow
       }
     })
 
-    // Left border line
+    // Border lines
     ctx.strokeStyle = '#2a2a2a'
     ctx.lineWidth = 1
     ctx.beginPath()
     ctx.moveTo(LEFT_PAD, 0)
     ctx.lineTo(LEFT_PAD, H)
     ctx.stroke()
-
-    // Right border line
     ctx.beginPath()
     ctx.moveTo(W - RIGHT_PAD, 0)
     ctx.lineTo(W - RIGHT_PAD, H)
     ctx.stroke()
 
-    // Time axis labels (bottom)
+    // Time labels
     ctx.fillStyle = '#3a3a3a'
     ctx.font = '9px JetBrains Mono, monospace'
     ctx.textAlign = 'left'
@@ -214,17 +257,23 @@ export function OscilloscopeView({ history, channels, activeChannels, timeWindow
       ctx.textAlign = 'center'
       ctx.fillText('── PAUSED ──', W / 2, 18)
     }
-  }, [history, activeChList, timeWindow, paused])
+  }, [history, activeChList, timeWindow, paused, tempWarnC, useFahrenheit, yAutoScale])
 
-  // Canvas resize + animation loop
+  // Resize + animation loop
   useEffect(() => {
     const canvas = canvasRef.current
     const container = containerRef.current
     if (!canvas || !container) return
 
     const resize = () => {
+      const count = Math.max(activeChList.length, 1)
+      const containerH = container.clientHeight
+      // Each lane gets at least MIN_LANE_H pixels; if fewer channels, they expand to fill
+      const laneH = Math.max(MIN_LANE_H, containerH / count)
+      const h = Math.ceil(laneH * count)
       canvas.width = container.clientWidth
-      canvas.height = container.clientHeight
+      canvas.height = h
+      setCanvasHeight(h)
       draw()
     }
 
@@ -239,7 +288,6 @@ export function OscilloscopeView({ history, channels, activeChannels, timeWindow
     }
   }, [draw])
 
-  // Hover handler — find closest sample and show values
   const handleMouseMove = useCallback(
     (e: React.MouseEvent<HTMLCanvasElement>) => {
       const canvas = canvasRef.current
@@ -274,19 +322,30 @@ export function OscilloscopeView({ history, channels, activeChannels, timeWindow
       const timeAgo = `${Math.round((now - closest.ts_ms) / 1000)}s ago`
       const values = activeChList.map((ch) => {
         const val = ch.getValue(closest)
-        return { label: ch.label, value: val != null ? ch.formatValue(val) : '--', color: ch.color }
+        let formatted = '--'
+        if (val !== null) {
+          if (ch.unit === '°C' && useFahrenheit) {
+            formatted = `${Math.round(val * 9 / 5 + 32)}°F`
+          } else {
+            formatted = ch.formatValue(val)
+          }
+        }
+        return { label: ch.label, value: formatted, color: ch.color }
       })
 
       setHover({ x: mouseX, y: mouseY, values, timeAgo })
     },
-    [history, activeChList, timeWindow]
+    [history, activeChList, timeWindow, useFahrenheit]
   )
 
   return (
-    <div ref={containerRef} style={{ width: '100%', height: '100%', position: 'relative' }}>
+    <div
+      ref={containerRef}
+      style={{ width: '100%', height: '100%', position: 'relative', overflowY: 'auto' }}
+    >
       <canvas
         ref={canvasRef}
-        style={{ width: '100%', height: '100%', display: 'block' }}
+        style={{ width: '100%', display: 'block' }}
         onMouseMove={handleMouseMove}
         onMouseLeave={() => setHover(null)}
       />
@@ -297,7 +356,7 @@ export function OscilloscopeView({ history, channels, activeChannels, timeWindow
           style={{
             position: 'absolute',
             left: hover.x + 12,
-            top: Math.min(hover.y, (canvasRef.current?.clientHeight ?? 400) - 120),
+            top: Math.min(hover.y, (canvasHeight || 400) - 120),
             background: '#161616',
             border: '1px solid #2a2a2a',
             padding: '6px 10px',
@@ -318,11 +377,14 @@ export function OscilloscopeView({ history, channels, activeChannels, timeWindow
         </div>
       )}
 
-      {/* Scanlines overlay */}
+      {/* Scanlines overlay — height tracks canvas so it covers scrollable content */}
       <div
         style={{
           position: 'absolute',
-          inset: 0,
+          top: 0,
+          left: 0,
+          right: 0,
+          height: canvasHeight || '100%',
           pointerEvents: 'none',
           background: 'repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,0,0,0.06) 3px, rgba(0,0,0,0.06) 4px)',
           zIndex: 5,

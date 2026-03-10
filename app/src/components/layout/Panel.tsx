@@ -11,8 +11,8 @@ export function Panel({ label, children, rightContent, style }: Props) {
   return (
     <div
       style={{
-        background: '#111111',
-        border: '1px solid #222222',
+        background: 'var(--bg-panel)',
+        border: '1px solid var(--border)',
         display: 'flex',
         flexDirection: 'column',
         ...style,
@@ -25,8 +25,8 @@ export function Panel({ label, children, rightContent, style }: Props) {
           alignItems: 'center',
           justifyContent: 'space-between',
           padding: '5px 10px',
-          borderBottom: '1px solid #1e1e1e',
-          background: '#0d0d0d',
+          borderBottom: '1px solid var(--border)',
+          background: 'var(--bg)',
           flexShrink: 0,
         }}
       >
@@ -35,7 +35,7 @@ export function Panel({ label, children, rightContent, style }: Props) {
             fontFamily: 'JetBrains Mono, monospace',
             fontSize: 9,
             letterSpacing: '0.15em',
-            color: '#555555',
+            color: 'var(--gray)',
             textTransform: 'uppercase',
           }}
         >

@@ -1,13 +1,13 @@
-import type { Config, PowerData } from '../../api/types'
+import type { Config, PowerApiResponse } from '../../api/types'
 import { FanPanel } from '../panels/FanPanel'
 import { PowerPanel } from '../panels/PowerPanel'
 import { BatteryPanel } from '../panels/BatteryPanel'
 
 interface Props {
   config?: Config
-  power?: PowerData
+  power?: PowerApiResponse
   currentRpm?: number
-  onFanModeChange: (mode: 'Disabled' | 'Manual' | 'Curve') => Promise<void>
+  onFanModeChange: (mode: 'disabled' | 'manual' | 'curve') => Promise<void>
   onFanDutyChange: (duty: number) => Promise<void>
   onConfigUpdate: (patch: Partial<Config>) => Promise<void>
 }
@@ -24,31 +24,33 @@ export function ControlsPanel({
 }: Props) {
   const handlePreset = async (preset: typeof PRESETS[0]) => {
     if (!config) return
-    const profile = {
-      ...config.power.ac,
+    const acProfile = {
+      ...(config.power.ac ?? {}),
       tdp_watts: { enabled: true, value: preset.tdp },
       thermal_limit_c: { enabled: true, value: preset.thermal },
     }
-    await onConfigUpdate({
-      power: { ac: profile, battery: { ...config.power.battery, tdp_watts: { enabled: true, value: Math.round(preset.tdp * 0.6) } } },
-    })
+    const batProfile = {
+      ...(config.power.battery ?? {}),
+      tdp_watts: { enabled: true, value: Math.round(preset.tdp * 0.6) },
+    }
+    await onConfigUpdate({ power: { ac: acProfile, battery: batProfile } })
   }
 
   return (
     <div
       style={{
-        gridArea: 'controls',
-        background: '#0d0d0d',
-        borderLeft: '1px solid #1a1a1a',
+        height: '100%',
+        background: 'var(--bg)',
+        borderLeft: '1px solid var(--border)',
         display: 'flex',
         flexDirection: 'column',
         gap: 1,
-        overflow: 'auto',
-        minWidth: 220,
+        overflowY: 'auto',
+        overflowX: 'hidden',
       }}
     >
       {/* Presets */}
-      <div style={{ padding: '8px 10px', borderBottom: '1px solid #1a1a1a' }}>
+      <div style={{ padding: '8px 10px', borderBottom: '1px solid var(--border)' }}>
         <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 9, color: '#333333', letterSpacing: '0.15em', marginBottom: 6 }}>
           PRESET
         </div>

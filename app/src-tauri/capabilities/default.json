@@ -1,0 +1,8 @@
+{
+  "identifier": "default",
+  "description": "Default capability for Framework Deck main window",
+  "windows": ["main"],
+  "permissions": [
+    "core:default"
+  ]
+}

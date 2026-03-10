@@ -1,6 +1,6 @@
 import useSWR, { useSWRConfig } from 'swr'
 import { apiFetch, apiPost } from '../api/client'
-import type { Config } from '../api/types'
+import type { Config, FanMode } from '../api/types'
 
 export function useConfig() {
   const { mutate } = useSWRConfig()
@@ -13,7 +13,14 @@ export function useConfig() {
   const updateConfig = async (patch: Partial<Config>) => {
     if (!swr.data) return
     const updated = { ...swr.data, ...patch }
-    await apiPost('/config', updated)
+    // Optimistic: update UI immediately before server confirms
+    mutate('config', updated, false)
+    try {
+      await apiPost('/config', updated)
+    } catch (err) {
+      console.warn('Config update failed:', err)
+    }
+    // Re-validate to get server's authoritative copy
     mutate('config')
   }
 
@@ -22,13 +29,13 @@ export function useConfig() {
     await updateConfig({
       fan: {
         ...swr.data.fan,
-        mode: 'Manual',
+        mode: 'manual' as FanMode,
         manual: { duty_pct: duty },
       },
     })
   }
 
-  const setFanMode = async (mode: 'Disabled' | 'Manual' | 'Curve') => {
+  const setFanMode = async (mode: FanMode) => {
     if (!swr.data) return
     await updateConfig({ fan: { ...swr.data.fan, mode } })
   }

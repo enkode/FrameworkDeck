@@ -1,9 +1,7 @@
 import { useState } from 'react'
-import type { Config } from '../../api/types'
+import type { Config, FanMode } from '../../api/types'
 import { fmtPct } from '../../utils/format'
 import { Panel } from '../layout/Panel'
-
-type FanMode = 'Disabled' | 'Manual' | 'Curve'
 
 interface Props {
   config?: Config
@@ -107,16 +105,16 @@ function DragSlider({
 
 export function FanPanel({ config, currentRpm, onModeChange, onDutyChange }: Props) {
   const fanConfig = config?.fan
-  const mode: FanMode = fanConfig?.mode ?? 'Disabled'
+  const mode: FanMode = fanConfig?.mode ?? 'disabled'
   const duty = fanConfig?.manual?.duty_pct ?? 0
   const [pendingDuty, setPendingDuty] = useState<number | null>(null)
   const displayDuty = pendingDuty ?? duty
 
-  const MODES: FanMode[] = ['Disabled', 'Manual', 'Curve']
+  const MODES: FanMode[] = ['disabled', 'manual', 'curve']
   const MODE_LABELS: Record<FanMode, string> = {
-    Disabled: 'AUTO',
-    Manual: 'MANUAL',
-    Curve: 'CURVE',
+    disabled: 'AUTO',
+    manual: 'MANUAL',
+    curve: 'CURVE',
   }
 
   const handleDutyChange = (v: number) => {
@@ -152,7 +150,7 @@ export function FanPanel({ config, currentRpm, onModeChange, onDutyChange }: Pro
         </div>
 
         {/* Manual duty slider */}
-        {mode === 'Manual' && (
+        {mode === 'manual' && (
           <div style={{ marginBottom: 8 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 3 }}>
               <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 9, color: '#555555' }}>
@@ -184,14 +182,14 @@ export function FanPanel({ config, currentRpm, onModeChange, onDutyChange }: Pro
         </div>
 
         {/* Auto mode note */}
-        {mode === 'Disabled' && (
+        {mode === 'disabled' && (
           <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 9, color: '#333333', marginTop: 4 }}>
             EC auto control active
           </div>
         )}
 
         {/* Curve mode note */}
-        {mode === 'Curve' && (
+        {mode === 'curve' && (
           <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 9, color: '#333333', marginTop: 4 }}>
             {fanConfig?.curve
               ? `${fanConfig.curve.points.length} points · ${fanConfig.curve.hysteresis_c}°C hyst`

@@ -1,12 +1,52 @@
-// API client for framework-control service REST API
+// API client for framework-control service REST API.
+//
+// Routing strategy:
+//   Tauri (dev or packaged): invoke Rust commands → reqwest makes HTTP call with
+//     no CORS headers, bypassing the service's origin allowlist entirely.
+//   Browser dev: Vite proxy strips Origin and forwards /api/* → 127.0.0.1:30912.
+//   Packaged Electron: main process strips Origin; frontend uses direct URL.
+
+// Tauri injects __TAURI_INTERNALS__ into every WebView it controls.
+const isTauri = typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window
+
+// Packaged Electron (not Tauri): userAgent contains "Electron" in production build.
+const isPackagedElectron =
+  !isTauri &&
+  typeof navigator !== 'undefined' &&
+  /Electron/.test(navigator.userAgent) &&
+  import.meta.env.PROD
 
 const getBase = () =>
-  (import.meta.env.VITE_API_BASE as string | undefined) || 'http://127.0.0.1:8090'
+  (import.meta.env.VITE_API_BASE as string | undefined) ||
+  (isPackagedElectron ? 'http://127.0.0.1:30912' : '')
 
 const getToken = () =>
-  (import.meta.env.VITE_API_TOKEN as string | undefined) || ''
+  (import.meta.env.VITE_API_TOKEN as string | undefined) || '4c07a4f2-0e64-4c43-bcb0-093cd55a55b6'
 
 export async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
+  // In Tauri: use Rust IPC — no CORS, no Origin header, no token leakage in JS
+  if (isTauri) {
+    const { invoke } = await import('@tauri-apps/api/core')
+    const method = (options?.method ?? 'GET').toUpperCase()
+    const apiPath = `/api${path}`
+    try {
+      let result: string
+      if (method === 'POST') {
+        const body = (options?.body as string | undefined) ?? '{}'
+        result = await invoke<string>('api_post', { path: apiPath, body })
+      } else {
+        result = await invoke<string>('api_get', { path: apiPath })
+      }
+      if (result === 'null' || result === '' || result == null) {
+        return undefined as unknown as T
+      }
+      return JSON.parse(result) as T
+    } catch (err) {
+      throw new Error(`API ${path}: ${err}`)
+    }
+  }
+
+  // Browser / Electron: regular fetch
   const url = `${getBase()}/api${path}`
   const token = getToken()
   const headers: Record<string, string> = {
@@ -18,6 +58,9 @@ export async function apiFetch<T>(path: string, options?: RequestInit): Promise<
   const res = await fetch(url, { ...options, headers })
   if (!res.ok) {
     throw new Error(`API ${path}: ${res.status} ${res.statusText}`)
+  }
+  if (res.status === 204 || res.headers.get('content-length') === '0') {
+    return undefined as unknown as T
   }
   return res.json() as Promise<T>
 }

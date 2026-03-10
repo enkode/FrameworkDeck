@@ -6,103 +6,65 @@ export interface Channel {
   unit: string
   min: number
   max: number
-  color: string       // CSS variable or hex
-  glowColor: string   // for canvas shadowColor
+  color: string     // 'var(--ch1)' — use directly in HTML inline styles
+  glowColor: string // 'var(--ch1-glow)' — use directly in HTML inline styles
+  colorVar: string  // '--ch1' — resolve with getComputedStyle for canvas
+  glowVar: string   // '--ch1-glow'
   getValue: (sample: TelemetrySample) => number | null
   formatValue: (v: number) => string
 }
 
-export const CHANNEL_COLORS: Record<string, { color: string; glow: string }> = {
-  ch1: { color: '#e8e0d0', glow: 'rgba(232,224,208,0.6)' },
-  ch2: { color: '#cc2222', glow: 'rgba(204,34,34,0.7)' },
-  ch3: { color: '#2255aa', glow: 'rgba(34,85,170,0.7)' },
-  ch4: { color: '#c09060', glow: 'rgba(192,144,96,0.6)' },
-  ch5: { color: '#448844', glow: 'rgba(68,136,68,0.6)' },
-  ch6: { color: '#aa44aa', glow: 'rgba(170,68,170,0.6)' },
-  ch7: { color: '#44aaaa', glow: 'rgba(68,170,170,0.6)' },
-  ch8: { color: '#aaaa44', glow: 'rgba(170,170,68,0.6)' },
+const SLOTS = ['ch1', 'ch2', 'ch3', 'ch4', 'ch5', 'ch6', 'ch7', 'ch8']
+
+export const getChannelColor = (idx: number) => {
+  const slot = SLOTS[idx % SLOTS.length]
+  return {
+    color: `var(--${slot})`,
+    glowColor: `var(--${slot}-glow)`,
+    colorVar: `--${slot}`,
+    glowVar: `--${slot}-glow`,
+  }
 }
 
-const COLOR_KEYS = Object.keys(CHANNEL_COLORS)
-export const getChannelColor = (idx: number) =>
-  CHANNEL_COLORS[COLOR_KEYS[idx % COLOR_KEYS.length]]
-
-// Default channels — extended dynamically when device data arrives
-export const DEFAULT_CHANNELS: Channel[] = [
-  {
-    id: 'apu_temp',
-    label: 'APU',
-    unit: '°C',
-    min: 20,
-    max: 100,
-    color: CHANNEL_COLORS.ch1.color,
-    glowColor: CHANNEL_COLORS.ch1.glow,
-    getValue: (s) => s.temps['apu_temp'] ?? null,
-    formatValue: (v) => `${Math.round(v)}°`,
-  },
-  {
-    id: 'gpu_temp',
-    label: 'GPU',
-    unit: '°C',
-    min: 20,
-    max: 100,
-    color: CHANNEL_COLORS.ch2.color,
-    glowColor: CHANNEL_COLORS.ch2.glow,
-    getValue: (s) => s.temps['gpu_temp'] ?? s.temps['dgpu_temp'] ?? null,
-    formatValue: (v) => `${Math.round(v)}°`,
-  },
-  {
-    id: 'cpu_temp',
-    label: 'CPU',
-    unit: '°C',
-    min: 20,
-    max: 100,
-    color: CHANNEL_COLORS.ch3.color,
-    glowColor: CHANNEL_COLORS.ch3.glow,
-    getValue: (s) => s.temps['cpu_temp'] ?? null,
-    formatValue: (v) => `${Math.round(v)}°`,
-  },
-  {
-    id: 'fan_0',
-    label: 'FAN',
-    unit: 'rpm',
-    min: 0,
-    max: 5000,
-    color: CHANNEL_COLORS.ch4.color,
-    glowColor: CHANNEL_COLORS.ch4.glow,
-    getValue: (s) => s.rpms[0] ?? null,
-    formatValue: (v) => `${Math.round(v)}`,
-  },
+// Preferred display order for temp sensors
+const TEMP_KEY_ORDER = [
+  'APU', 'F75303_CPU', 'F75303_DDR', 'F75303_Local',
+  'dGPU temp', 'dGPU AMB', 'dGPU VR', 'dGPU VRAM',
+  'CPU', 'GPU',
 ]
 
-// Build channel list dynamically from known sensor keys in a sample
+const TEMP_LABELS: Record<string, string> = {
+  'APU': 'APU',
+  'F75303_CPU': 'CPU-EC',
+  'F75303_DDR': 'DDR',
+  'F75303_Local': 'EC',
+  'dGPU temp': 'dGPU',
+  'dGPU AMB': 'GPU-AMB',
+  'dGPU VR': 'GPU-VR',
+  'dGPU VRAM': 'VRAM',
+  'CPU': 'CPU',
+  'GPU': 'GPU',
+}
+
 export function buildChannels(sampleKeys: string[], rpmCount: number): Channel[] {
   const channels: Channel[] = []
   let colorIdx = 0
 
-  const tempKeys = [
-    'apu_temp', 'gpu_temp', 'cpu_temp', 'dgpu_temp',
-    'f75303_cpu', 'f75303_ddr', 'f75303_local',
-    'dgpu_amb', 'dgpu_vr', 'dgpu_vram',
+  const orderedKeys = [
+    ...TEMP_KEY_ORDER.filter((k) => sampleKeys.includes(k)),
+    ...sampleKeys.filter((k) => !TEMP_KEY_ORDER.includes(k)),
   ]
 
-  for (const key of tempKeys) {
-    if (!sampleKeys.includes(key)) continue
+  for (const key of orderedKeys) {
     const col = getChannelColor(colorIdx++)
-    const label = key
-      .replace('_temp', '')
-      .replace('f75303_', '')
-      .replace('dgpu_', 'GPU-')
-      .toUpperCase()
-
+    const label = TEMP_LABELS[key] ?? key.replace(/[_\s]+/g, '-').toUpperCase().slice(0, 8)
     channels.push({
       id: key,
       label,
       unit: '°C',
       min: 20,
-      max: 100,
-      color: col.color,
-      glowColor: col.glow,
+      max: 105,
+      ...col,
       getValue: (s) => s.temps[key] ?? null,
       formatValue: (v) => `${Math.round(v)}°`,
     })
@@ -112,16 +74,39 @@ export function buildChannels(sampleKeys: string[], rpmCount: number): Channel[]
     const col = getChannelColor(colorIdx++)
     channels.push({
       id: `fan_${i}`,
-      label: `FAN${rpmCount > 1 ? `-${i}` : ''}`,
+      label: rpmCount > 1 ? `FAN-${i + 1}` : 'FAN',
       unit: 'rpm',
       min: 0,
-      max: 5000,
-      color: col.color,
-      glowColor: col.glow,
+      max: 6000,
+      ...col,
       getValue: (s) => s.rpms[i] ?? null,
       formatValue: (v) => `${Math.round(v)}`,
     })
   }
 
-  return channels.length > 0 ? channels : DEFAULT_CHANNELS
+  return channels
 }
+
+// Fallback used before first sample arrives
+export const DEFAULT_CHANNELS: Channel[] = [
+  {
+    id: 'APU',
+    label: 'APU',
+    unit: '°C',
+    min: 20,
+    max: 105,
+    ...getChannelColor(0),
+    getValue: (s) => s.temps['APU'] ?? null,
+    formatValue: (v) => `${Math.round(v)}°`,
+  },
+  {
+    id: 'fan_0',
+    label: 'FAN',
+    unit: 'rpm',
+    min: 0,
+    max: 6000,
+    ...getChannelColor(3),
+    getValue: (s) => s.rpms[0] ?? null,
+    formatValue: (v) => `${Math.round(v)}`,
+  },
+]

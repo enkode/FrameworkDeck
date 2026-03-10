@@ -1,11 +1,11 @@
 import useSWR from 'swr'
 import { apiFetch } from '../api/client'
-import type { PowerData, SystemInfo, VersionInfo } from '../api/types'
+import type { PowerApiResponse, SystemInfo, VersionInfo } from '../api/types'
 
 export function usePower() {
-  return useSWR<PowerData>(
+  return useSWR<PowerApiResponse>(
     'power',
-    () => apiFetch<PowerData>('/power'),
+    () => apiFetch<PowerApiResponse>('/power'),
     { refreshInterval: 2000 }
   )
 }
