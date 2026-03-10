@@ -8,6 +8,8 @@ import { KeyboardModule } from './modules/KeyboardModule'
 import { SettingsModule } from './modules/SettingsModule'
 import { FanModule } from './modules/FanModule'
 import { SystemModule } from './modules/SystemModule'
+import { PowerModule } from './modules/PowerModule'
+import { BatteryModule } from './modules/BatteryModule'
 
 function AppInner() {
   const { theme, activeModule, reducedMotion, highContrast, fontScale } = useAppStore()
@@ -34,33 +36,9 @@ function AppInner() {
       case 'fan':
         return <FanModule />
       case 'power':
-        return (
-          <PlaceholderModule
-            title="Power Management"
-            description="TDP, thermal limits, EPP preferences, CPU governor, and frequency controls for both AC and battery profiles."
-            features={[
-              'TDP limit control (RyzenAdj)',
-              'Thermal limit adjustment',
-              'EPP preference presets',
-              'CPU governor selection',
-              'AC vs Battery profiles',
-            ]}
-          />
-        )
+        return <PowerModule />
       case 'battery':
-        return (
-          <PlaceholderModule
-            title="Battery Health"
-            description="Battery charge limit management, health monitoring, discharge rate tracking, and cycle count history."
-            features={[
-              'Charge limit control',
-              'Battery health & capacity',
-              'Charge rate (C-rate) limiting',
-              'Cycle count tracking',
-              'Voltage & current monitoring',
-            ]}
-          />
-        )
+        return <BatteryModule />
       case 'input-modules':
         return (
           <PlaceholderModule
