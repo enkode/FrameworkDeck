@@ -1,10 +1,9 @@
-import { useHealth } from '../hooks/useHealth'
 import { usePower } from '../hooks/usePower'
 import { useConfig } from '../hooks/useConfig'
 import { useAppStore } from '../store/app'
 import { Panel } from '../components/layout/Panel'
 import { LEDIndicator } from '../components/analog/LEDIndicator'
-import type { Config, PowerProfile, SettingU32, SettingString } from '../api/types'
+import type { PowerProfile } from '../api/types'
 
 const mono: React.CSSProperties = { fontFamily: 'JetBrains Mono, monospace' }
 
@@ -51,7 +50,6 @@ function InfoRow({ label, value, color = '#888888' }: { label: string; value?: s
 }
 
 export function PowerModule() {
-  const { connected } = useHealth()
   const { data: power } = usePower()
   const { data: config, updateConfig } = useConfig()
   const { useFahrenheit } = useAppStore()

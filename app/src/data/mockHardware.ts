@@ -1,4 +1,4 @@
-import type { ModuleData } from '../components/Stage/ModuleRenderer';
+import type { ModuleData } from '../components/keyboard/Stage/ModuleRenderer';
 
 export const MAIN_KEYBOARD_ANSI: ModuleData = {
     id: 'main-keyboard',

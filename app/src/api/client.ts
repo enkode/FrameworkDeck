@@ -4,21 +4,12 @@
 //   Tauri (dev or packaged): invoke Rust commands → reqwest makes HTTP call with
 //     no CORS headers, bypassing the service's origin allowlist entirely.
 //   Browser dev: Vite proxy strips Origin and forwards /api/* → 127.0.0.1:30912.
-//   Packaged Electron: main process strips Origin; frontend uses direct URL.
 
 // Tauri injects __TAURI_INTERNALS__ into every WebView it controls.
 const isTauri = typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window
 
-// Packaged Electron (not Tauri): userAgent contains "Electron" in production build.
-const isPackagedElectron =
-  !isTauri &&
-  typeof navigator !== 'undefined' &&
-  /Electron/.test(navigator.userAgent) &&
-  import.meta.env.PROD
-
 const getBase = () =>
-  (import.meta.env.VITE_API_BASE as string | undefined) ||
-  (isPackagedElectron ? 'http://127.0.0.1:30912' : '')
+  (import.meta.env.VITE_API_BASE as string | undefined) || ''
 
 const getToken = () =>
   (import.meta.env.VITE_API_TOKEN as string | undefined) || '4c07a4f2-0e64-4c43-bcb0-093cd55a55b6'

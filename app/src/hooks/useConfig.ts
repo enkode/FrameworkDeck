@@ -1,5 +1,6 @@
 import useSWR, { useSWRConfig } from 'swr'
 import { apiFetch, apiPost } from '../api/client'
+import { log } from '../services/Logger'
 import type { Config, FanMode } from '../api/types'
 
 export function useConfig() {
@@ -18,7 +19,7 @@ export function useConfig() {
     try {
       await apiPost('/config', updated)
     } catch (err) {
-      console.warn('Config update failed:', err)
+      log.warnDevice(`Config update failed: ${err}`)
     }
     // Re-validate to get server's authoritative copy
     mutate('config')

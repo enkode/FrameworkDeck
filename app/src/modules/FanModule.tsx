@@ -135,7 +135,7 @@ function FanCurveEditor({ points, onPointsChange, currentTemp, currentDuty, hyst
     ctx.fill()
 
     // Points
-    sorted.forEach((p, i) => {
+    sorted.forEach((p) => {
       const x = tempToX(p[0])
       const y = dutyToY(p[1])
       const originalIdx = points.indexOf(p)

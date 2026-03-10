@@ -1,9 +1,7 @@
-import { useHealth } from '../hooks/useHealth'
 import { usePower } from '../hooks/usePower'
 import { useConfig } from '../hooks/useConfig'
 import { Panel } from '../components/layout/Panel'
 import { LEDIndicator } from '../components/analog/LEDIndicator'
-import type { Config } from '../api/types'
 
 const mono: React.CSSProperties = { fontFamily: 'JetBrains Mono, monospace' }
 
@@ -46,7 +44,6 @@ function LevelBar({ value, max, color }: { value: number; max: number; color: st
 }
 
 export function BatteryModule() {
-  const { connected } = useHealth()
   const { data: power } = usePower()
   const { data: config, updateConfig } = useConfig()
 

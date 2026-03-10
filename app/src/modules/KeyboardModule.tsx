@@ -25,8 +25,8 @@ import { hid, type HealthCheckResult } from '../services/HIDService'
 export function KeyboardModule() {
   const {
     isConnected, isConnecting, connectedProductId, connectedProductName,
-    protocolVersion, hasPerKeyRGB, permittedDevices, restoreComplete,
-    activeLayer, setActiveLayer, markRestoreComplete,
+    protocolVersion, hasPerKeyRGB, permittedDevices,
+    markRestoreComplete,
     connectDevice, connectToDevice, switchDevice, disconnectDevice, init,
   } = useDeviceStore()
 

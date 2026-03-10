@@ -14,14 +14,6 @@ const mono: React.CSSProperties = {
   fontFamily: 'JetBrains Mono, monospace',
 }
 
-function SectionLabel({ children }: { children: string }) {
-  return (
-    <div style={{ ...mono, fontSize: 9, color: 'var(--gray)', letterSpacing: '0.2em', marginBottom: 12, textTransform: 'uppercase' }}>
-      {children}
-    </div>
-  )
-}
-
 function SettingRow({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div style={{ marginBottom: 16 }}>

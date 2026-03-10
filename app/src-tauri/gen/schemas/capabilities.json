@@ -1,0 +1,1 @@
+{"default":{"identifier":"default","description":"Default capability for Framework Deck main window","local":true,"windows":["main"],"permissions":["core:default"]}}

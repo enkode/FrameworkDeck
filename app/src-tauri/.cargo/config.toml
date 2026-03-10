@@ -1,0 +1,4 @@
+[build]
+# Build artifacts go to user's .cargo dir to avoid Windows Defender
+# file-locking issues with the project target directory.
+target-dir = "C:/Users/Troy/.cargo/target/framework-deck"

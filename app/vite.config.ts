@@ -3,7 +3,7 @@ import react from '@vitejs/plugin-react'
 
 export default defineConfig({
   plugins: [react()],
-  // Relative base so asset paths work when loaded from file:// in packaged Electron
+  // Relative base so asset paths work when loaded from tauri:// protocol
   base: './',
   server: {
     port: 5174,

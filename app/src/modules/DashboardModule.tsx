@@ -12,7 +12,7 @@ import { ControlsPanel } from '../components/layout/ControlsPanel'
 import { StatusBar } from '../components/layout/StatusBar'
 
 export function DashboardModule() {
-  const { connected, cliPresent, version } = useHealth()
+  const { connected, cliPresent } = useHealth()
   const { data: history = [] } = useThermalHistory()
   const { data: power } = usePower()
   const { data: system } = useSystem()
