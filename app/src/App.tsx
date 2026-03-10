@@ -5,6 +5,9 @@ import { AppShell } from './layouts/AppShell'
 import { DashboardModule } from './modules/DashboardModule'
 import { PlaceholderModule } from './modules/PlaceholderModule'
 import { KeyboardModule } from './modules/KeyboardModule'
+import { SettingsModule } from './modules/SettingsModule'
+import { FanModule } from './modules/FanModule'
+import { SystemModule } from './modules/SystemModule'
 
 function AppInner() {
   const { theme, activeModule, reducedMotion, highContrast, fontScale } = useAppStore()
@@ -29,19 +32,7 @@ function AppInner() {
       case 'keyboard':
         return <KeyboardModule />
       case 'fan':
-        return (
-          <PlaceholderModule
-            title="Fan Control"
-            description="Advanced fan curve editor with visual curve designer, custom temperature-to-duty mappings, and real-time RPM monitoring."
-            features={[
-              'Visual fan curve editor',
-              'Custom temperature breakpoints',
-              'Hysteresis & rate limiting',
-              'Auto / Manual / Curve modes',
-              'Per-sensor curve assignment',
-            ]}
-          />
-        )
+        return <FanModule />
       case 'power':
         return (
           <PlaceholderModule
@@ -85,33 +76,9 @@ function AppInner() {
           />
         )
       case 'system':
-        return (
-          <PlaceholderModule
-            title="System Information"
-            description="Hardware details, EC firmware versions, BIOS info, display settings, and sleep/wake diagnostics."
-            features={[
-              'CPU / GPU / RAM info',
-              'BIOS & EC firmware versions',
-              'Display brightness control',
-              'Sleep/wake event log',
-              'Mainboard identification',
-            ]}
-          />
-        )
+        return <SystemModule />
       case 'settings':
-        return (
-          <PlaceholderModule
-            title="Settings"
-            description="Application preferences, theme selection, accessibility options, and service configuration."
-            features={[
-              '4 visual themes',
-              'Font scaling (0.8x – 1.5x)',
-              'High contrast mode',
-              'Reduced motion',
-              'Temperature unit toggle',
-            ]}
-          />
-        )
+        return <SettingsModule />
       default:
         return <DashboardModule />
     }
