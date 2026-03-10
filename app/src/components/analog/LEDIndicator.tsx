@@ -1,3 +1,5 @@
+import { fs } from '../../utils/font'
+
 interface Props {
   active: boolean
   color?: string
@@ -22,7 +24,7 @@ export function LEDIndicator({ active, color = '#22cc44', pulse = false, size = 
         }}
       />
       {label && (
-        <span style={{ color: active ? '#e8e0d0' : '#444444', fontSize: 10, fontFamily: 'JetBrains Mono, monospace' }}>
+        <span style={{ color: active ? '#e8e0d0' : '#444444', fontSize: fs(10), fontFamily: 'JetBrains Mono, monospace' }}>
           {label}
         </span>
       )}

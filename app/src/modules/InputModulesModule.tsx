@@ -1,3 +1,4 @@
+import { fs } from '../utils/font'
 import { useState, useRef, useCallback, useEffect } from 'react'
 import { Panel } from '../components/layout/Panel'
 import { LEDIndicator } from '../components/analog/LEDIndicator'
@@ -177,19 +178,19 @@ export function InputModulesModule() {
         height: 46,
         gap: 14,
       }}>
-        <span style={{ ...mono, fontSize: 12, color: 'var(--cream)', letterSpacing: '0.15em' }}>
+        <span style={{ ...mono, fontSize: fs(12), color: 'var(--cream)', letterSpacing: '0.15em' }}>
           INPUT MODULES
         </span>
 
         <div style={{ width: 1, height: 22, background: 'var(--border-2)' }} />
 
-        <span style={{ ...mono, fontSize: 10, color: 'var(--gray)' }}>
+        <span style={{ ...mono, fontSize: fs(10), color: 'var(--gray)' }}>
           Framework Laptop 16
         </span>
 
         <div style={{ flex: 1 }} />
 
-        <span style={{ ...mono, fontSize: 9, color: '#333333' }}>
+        <span style={{ ...mono, fontSize: fs(9), color: '#333333' }}>
           Requires Tauri + inputmodule-rs backend
         </span>
       </div>
@@ -214,7 +215,7 @@ export function InputModulesModule() {
                 background: 'transparent',
                 border: '1px solid #1e1e1e',
                 color: '#555555',
-                ...mono, fontSize: 9, letterSpacing: '0.08em',
+                ...mono, fontSize: fs(9), letterSpacing: '0.08em',
                 cursor: 'pointer',
                 textTransform: 'uppercase',
               }}
@@ -238,14 +239,14 @@ export function InputModulesModule() {
         </div>
 
         {/* Instructions */}
-        <div style={{ ...mono, fontSize: 9, color: '#333333', display: 'flex', gap: 16 }}>
+        <div style={{ ...mono, fontSize: fs(9), color: '#333333', display: 'flex', gap: 16 }}>
           <span>Click/drag to draw</span>
           <span>{litCount}/{totalLeds} LEDs active</span>
         </div>
 
         {/* Module Slots */}
         <div style={{ marginTop: 8 }}>
-          <div style={{ ...mono, fontSize: 9, color: 'var(--gray)', letterSpacing: '0.15em', marginBottom: 10 }}>
+          <div style={{ ...mono, fontSize: fs(9), color: 'var(--gray)', letterSpacing: '0.15em', marginBottom: 10 }}>
             MODULE SLOTS
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 6 }}>
@@ -265,8 +266,8 @@ export function InputModulesModule() {
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <LEDIndicator active={slot.connected} color={slot.connected ? '#22cc44' : '#333333'} size={5} />
                   <div>
-                    <div style={{ ...mono, fontSize: 9, color: '#555555', letterSpacing: '0.08em' }}>{slot.position}</div>
-                    <div style={{ ...mono, fontSize: 10, color: slot.connected ? 'var(--cream)' : '#444444' }}>{slot.name}</div>
+                    <div style={{ ...mono, fontSize: fs(9), color: '#555555', letterSpacing: '0.08em' }}>{slot.position}</div>
+                    <div style={{ ...mono, fontSize: fs(10), color: slot.connected ? 'var(--cream)' : '#444444' }}>{slot.name}</div>
                   </div>
                 </div>
               </button>
@@ -287,8 +288,8 @@ export function InputModulesModule() {
         <Panel label="LED BRIGHTNESS">
           <div style={{ padding: '10px 12px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-              <span style={{ ...mono, fontSize: 10, color: '#666666' }}>BRIGHTNESS</span>
-              <span style={{ ...mono, fontSize: 11, color: 'var(--cream)' }}>{brightness}%</span>
+              <span style={{ ...mono, fontSize: fs(10), color: '#666666' }}>BRIGHTNESS</span>
+              <span style={{ ...mono, fontSize: fs(11), color: 'var(--cream)' }}>{brightness}%</span>
             </div>
             <input
               type="range"
@@ -312,7 +313,7 @@ export function InputModulesModule() {
                   background: !animating ? 'var(--blue-dim)' : 'transparent',
                   border: `1px solid ${!animating ? 'var(--blue)' : '#2a2a2a'}`,
                   color: !animating ? 'var(--blue)' : '#555555',
-                  ...mono, fontSize: 10, cursor: 'pointer',
+                  ...mono, fontSize: fs(10), cursor: 'pointer',
                 }}
               >
                 STATIC
@@ -324,13 +325,13 @@ export function InputModulesModule() {
                   background: animating ? 'var(--blue-dim)' : 'transparent',
                   border: `1px solid ${animating ? 'var(--blue)' : '#2a2a2a'}`,
                   color: animating ? 'var(--blue)' : '#555555',
-                  ...mono, fontSize: 10, cursor: 'pointer',
+                  ...mono, fontSize: fs(10), cursor: 'pointer',
                 }}
               >
                 ANIMATE
               </button>
             </div>
-            <div style={{ ...mono, fontSize: 8, color: '#2a2a2a', marginTop: 6 }}>
+            <div style={{ ...mono, fontSize: fs(8), color: '#2a2a2a', marginTop: 6 }}>
               Animation scrolls the pattern across the matrix
             </div>
           </div>
@@ -340,20 +341,20 @@ export function InputModulesModule() {
         <Panel label="PATTERN INFO">
           <div style={{ padding: '10px 12px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-              <span style={{ ...mono, fontSize: 10, color: '#555555' }}>GRID SIZE</span>
-              <span style={{ ...mono, fontSize: 10, color: '#888888' }}>{MATRIX_COLS}x{MATRIX_ROWS}</span>
+              <span style={{ ...mono, fontSize: fs(10), color: '#555555' }}>GRID SIZE</span>
+              <span style={{ ...mono, fontSize: fs(10), color: '#888888' }}>{MATRIX_COLS}x{MATRIX_ROWS}</span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-              <span style={{ ...mono, fontSize: 10, color: '#555555' }}>ACTIVE LEDS</span>
-              <span style={{ ...mono, fontSize: 10, color: 'var(--cream)' }}>{litCount}</span>
+              <span style={{ ...mono, fontSize: fs(10), color: '#555555' }}>ACTIVE LEDS</span>
+              <span style={{ ...mono, fontSize: fs(10), color: 'var(--cream)' }}>{litCount}</span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-              <span style={{ ...mono, fontSize: 10, color: '#555555' }}>TOTAL</span>
-              <span style={{ ...mono, fontSize: 10, color: '#888888' }}>{totalLeds}</span>
+              <span style={{ ...mono, fontSize: fs(10), color: '#555555' }}>TOTAL</span>
+              <span style={{ ...mono, fontSize: fs(10), color: '#888888' }}>{totalLeds}</span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span style={{ ...mono, fontSize: 10, color: '#555555' }}>FILL</span>
-              <span style={{ ...mono, fontSize: 10, color: '#888888' }}>{((litCount / totalLeds) * 100).toFixed(0)}%</span>
+              <span style={{ ...mono, fontSize: fs(10), color: '#555555' }}>FILL</span>
+              <span style={{ ...mono, fontSize: fs(10), color: '#888888' }}>{((litCount / totalLeds) * 100).toFixed(0)}%</span>
             </div>
           </div>
         </Panel>
@@ -366,8 +367,8 @@ export function InputModulesModule() {
               background: '#0a0e1a', border: '1px solid #1a2244',
               display: 'flex', alignItems: 'flex-start', gap: 6,
             }}>
-              <span style={{ color: '#4488cc', fontSize: 10, flexShrink: 0 }}>i</span>
-              <span style={{ ...mono, fontSize: 9, color: '#336699', lineHeight: 1.5 }}>
+              <span style={{ color: '#4488cc', fontSize: fs(10), flexShrink: 0 }}>i</span>
+              <span style={{ ...mono, fontSize: fs(9), color: '#336699', lineHeight: 1.5 }}>
                 LED Matrix and expansion card detection require Tauri backend commands using the inputmodule-rs library. The pattern editor works locally — sending patterns to hardware is pending backend implementation.
               </span>
             </div>

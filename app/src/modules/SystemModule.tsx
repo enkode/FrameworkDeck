@@ -1,3 +1,4 @@
+import { fs } from '../utils/font'
 import { useHealth } from '../hooks/useHealth'
 import { usePower, useSystem, useVersions } from '../hooks/usePower'
 import { Panel } from '../components/layout/Panel'
@@ -9,8 +10,8 @@ function InfoRow({ label, value, color = '#888888' }: { label: string; value?: s
   if (value == null) return null
   return (
     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-      <span style={{ ...mono, fontSize: 10, color: '#555555', letterSpacing: '0.04em' }}>{label}</span>
-      <span style={{ ...mono, fontSize: 11, color }}>{value}</span>
+      <span style={{ ...mono, fontSize: fs(10), color: '#555555', letterSpacing: '0.04em' }}>{label}</span>
+      <span style={{ ...mono, fontSize: fs(11), color }}>{value}</span>
     </div>
   )
 }
@@ -32,12 +33,12 @@ export function SystemModule() {
     }}>
       {/* Header */}
       <div style={{ marginBottom: 28 }}>
-        <h2 style={{ ...mono, fontSize: 14, color: 'var(--cream)', letterSpacing: '0.15em', margin: 0 }}>
+        <h2 style={{ ...mono, fontSize: fs(14), color: 'var(--cream)', letterSpacing: '0.15em', margin: 0 }}>
           SYSTEM INFORMATION
         </h2>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 6 }}>
           <LEDIndicator active={connected} color={cliPresent ? '#22cc44' : '#cc8800'} size={6} />
-          <span style={{ ...mono, fontSize: 10, color: connected ? '#22cc44' : '#444444' }}>
+          <span style={{ ...mono, fontSize: fs(10), color: connected ? '#22cc44' : '#444444' }}>
             {connected ? (cliPresent ? `framework-control ${version ?? ''}` : 'Service connected (CLI not found)') : 'Service offline'}
           </span>
         </div>
@@ -58,7 +59,7 @@ export function SystemModule() {
             />
             <InfoRow label="OS" value={system?.os} />
             {!connected && (
-              <div style={{ ...mono, fontSize: 10, color: '#333333', marginTop: 8 }}>
+              <div style={{ ...mono, fontSize: fs(10), color: '#333333', marginTop: 8 }}>
                 Connect framework-control service to view hardware info
               </div>
             )}
@@ -73,7 +74,7 @@ export function SystemModule() {
             <InfoRow label="EC BUILD" value={versions?.ec_build_version} />
             <InfoRow label="EC IMAGE" value={versions?.ec_current_image} />
             {!versions && connected && (
-              <div style={{ ...mono, fontSize: 10, color: '#333333', marginTop: 8 }}>
+              <div style={{ ...mono, fontSize: fs(10), color: '#333333', marginTop: 8 }}>
                 Version info not available from service
               </div>
             )}
@@ -104,7 +105,7 @@ export function SystemModule() {
             {power?.power_control && (
               <>
                 <div style={{ borderTop: '1px solid #1a1a1a', marginTop: 8, paddingTop: 8 }}>
-                  <div style={{ ...mono, fontSize: 9, color: '#444444', letterSpacing: '0.1em', marginBottom: 6 }}>CAPABILITIES</div>
+                  <div style={{ ...mono, fontSize: fs(9), color: '#444444', letterSpacing: '0.1em', marginBottom: 6 }}>CAPABILITIES</div>
                 </div>
                 <InfoRow label="TDP CONTROL" value={power.power_control.capabilities.supports_tdp ? 'Supported' : 'No'} />
                 <InfoRow label="THERMAL LIMIT" value={power.power_control.capabilities.supports_thermal ? 'Supported' : 'No'} />

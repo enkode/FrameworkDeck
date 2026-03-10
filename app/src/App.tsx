@@ -12,7 +12,7 @@ import { BatteryModule } from './modules/BatteryModule'
 import { InputModulesModule } from './modules/InputModulesModule'
 
 function AppInner() {
-  const { theme, activeModule, reducedMotion, highContrast, fontScale } = useAppStore()
+  const { theme, activeModule, reducedMotion, highContrast, fontScale, uiScale } = useAppStore()
 
   // Apply theme + accessibility attributes on mount and change
   useEffect(() => {
@@ -25,7 +25,8 @@ function AppInner() {
     root.setAttribute('data-reduced-motion', String(reducedMotion))
     root.setAttribute('data-high-contrast', String(highContrast))
     root.style.setProperty('--font-scale', String(fontScale))
-  }, [theme, reducedMotion, highContrast, fontScale])
+    root.style.setProperty('--ui-scale', String(uiScale))
+  }, [theme, reducedMotion, highContrast, fontScale, uiScale])
 
   const renderModule = () => {
     switch (activeModule) {

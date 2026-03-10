@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { fs } from '../../utils/font'
 import type { Config, FanMode } from '../../api/types'
 import { fmtPct } from '../../utils/format'
 import { Panel } from '../layout/Panel'
@@ -17,10 +18,10 @@ function ScopeBar({
   return (
     <div style={{ marginBottom: 10 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 3 }}>
-        <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 9, color: '#555555', letterSpacing: '0.08em' }}>
+        <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: fs(9), color: '#555555', letterSpacing: '0.08em' }}>
           {label}
         </span>
-        <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 10, color }}>
+        <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: fs(10), color }}>
           {Math.round(value)}{unit}
         </span>
       </div>
@@ -138,7 +139,7 @@ export function FanPanel({ config, currentRpm, onModeChange, onDutyChange }: Pro
                 border: `1px solid ${mode === m ? '#c09060' : '#1e1e1e'}`,
                 color: mode === m ? '#c09060' : '#444444',
                 fontFamily: 'JetBrains Mono, monospace',
-                fontSize: 9,
+                fontSize: fs(9),
                 letterSpacing: '0.08em',
                 cursor: 'pointer',
                 transition: 'all 0.1s',
@@ -153,10 +154,10 @@ export function FanPanel({ config, currentRpm, onModeChange, onDutyChange }: Pro
         {mode === 'manual' && (
           <div style={{ marginBottom: 8 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 3 }}>
-              <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 9, color: '#555555' }}>
+              <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: fs(9), color: '#555555' }}>
                 DUTY
               </span>
-              <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 11, color: '#c09060' }}>
+              <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: fs(11), color: '#c09060' }}>
                 {fmtPct(displayDuty)}
               </span>
             </div>
@@ -183,14 +184,14 @@ export function FanPanel({ config, currentRpm, onModeChange, onDutyChange }: Pro
 
         {/* Auto mode note */}
         {mode === 'disabled' && (
-          <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 9, color: '#333333', marginTop: 4 }}>
+          <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: fs(9), color: '#333333', marginTop: 4 }}>
             EC auto control active
           </div>
         )}
 
         {/* Curve mode note */}
         {mode === 'curve' && (
-          <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 9, color: '#333333', marginTop: 4 }}>
+          <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: fs(9), color: '#333333', marginTop: 4 }}>
             {fanConfig?.curve
               ? `${fanConfig.curve.points.length} points · ${fanConfig.curve.hysteresis_c}°C hyst`
               : 'No curve configured'}

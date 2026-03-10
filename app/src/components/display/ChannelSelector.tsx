@@ -1,3 +1,4 @@
+import { fs } from '../../utils/font'
 import type { Channel } from '../../config/channels'
 
 interface Props {
@@ -25,7 +26,7 @@ export function ChannelSelector({ channels, activeChannels, onToggle }: Props) {
               color: active ? ch.color : '#444444',
               cursor: 'pointer',
               fontFamily: 'JetBrains Mono, monospace',
-              fontSize: 10,
+              fontSize: fs(10),
               letterSpacing: '0.05em',
               transition: 'all 0.15s',
             }}

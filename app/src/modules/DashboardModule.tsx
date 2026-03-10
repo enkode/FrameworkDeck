@@ -1,3 +1,4 @@
+import { fs } from '../utils/font'
 import { useEffect, useMemo } from 'react'
 import { useHealth } from '../hooks/useHealth'
 import { useThermalHistory } from '../hooks/useThermal'
@@ -141,10 +142,10 @@ function OfflineScreen() {
           <div key={i} style={{ position: 'absolute', top: `${i * 12.5}%`, left: 0, right: 0, height: 1, background: '#e8e0d0' }} />
         ))}
       </div>
-      <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 10, color: '#222222', letterSpacing: '0.3em', textTransform: 'uppercase' }}>
+      <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: fs(10), color: '#222222', letterSpacing: '0.3em', textTransform: 'uppercase' }}>
         NO SIGNAL
       </div>
-      <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 9, color: '#1a1a1a', letterSpacing: '0.1em' }}>
+      <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: fs(9), color: '#1a1a1a', letterSpacing: '0.1em' }}>
         Start framework-control service on port 8090
       </div>
     </div>

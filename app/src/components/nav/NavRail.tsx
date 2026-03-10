@@ -1,3 +1,4 @@
+import { fs } from '../../utils/font'
 import { useAppStore } from '../../store/app'
 import { MODULES } from '../../types/navigation'
 import type { ModuleId } from '../../types/navigation'
@@ -48,14 +49,14 @@ export function NavRail() {
           background: 'var(--tan)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           fontFamily: 'JetBrains Mono, monospace',
-          fontWeight: 700, fontSize: 14, color: 'var(--bg)',
+          fontWeight: 700, fontSize: fs(14), color: 'var(--bg)',
         }}>
           FD
         </div>
         {navExpanded && (
-          <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 11, color: 'var(--cream)', whiteSpace: 'nowrap', letterSpacing: '0.05em' }}>
+          <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: fs(11), color: 'var(--cream)', whiteSpace: 'nowrap', letterSpacing: '0.05em' }}>
             FRAMEWORK<br />
-            <span style={{ color: 'var(--cream-dim)', fontSize: 9 }}>DECK v2.0</span>
+            <span style={{ color: 'var(--cream-dim)', fontSize: fs(9) }}>DECK v2.0</span>
           </div>
         )}
       </div>
@@ -72,7 +73,7 @@ export function NavRail() {
           boxShadow: connected ? '0 0 6px var(--green)' : '0 0 6px var(--red)',
         }} />
         {navExpanded && (
-          <span style={{ fontSize: 9, color: 'var(--cream-dim)', fontFamily: 'JetBrains Mono, monospace', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+          <span style={{ fontSize: fs(9), color: 'var(--cream-dim)', fontFamily: 'JetBrains Mono, monospace', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
             {connected ? 'ONLINE' : 'OFFLINE'}
           </span>
         )}
@@ -117,7 +118,7 @@ function NavGroup({ modules, activeModule, onSelect, expanded }: {
               color: isActive ? 'var(--cream)' : 'var(--cream-dim)',
               cursor: 'pointer',
               fontFamily: 'JetBrains Mono, monospace',
-              fontSize: 10,
+              fontSize: fs(10),
               letterSpacing: '0.08em',
               textAlign: 'left',
               borderLeft: isActive ? '2px solid var(--tan)' : '2px solid transparent',

@@ -1,3 +1,4 @@
+import { fs } from '../utils/font'
 import React, { useState, useRef, useCallback, useEffect, useMemo } from 'react'
 import { useHealth } from '../hooks/useHealth'
 import { useThermalHistory } from '../hooks/useThermal'
@@ -256,9 +257,9 @@ function RPMGauge({ rpm, max = 5000 }: { rpm: number; max?: number }) {
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-        <span style={{ ...mono, fontSize: 10, color: '#555555', letterSpacing: '0.08em' }}>FAN RPM</span>
-        <span style={{ ...mono, fontSize: 14, color: rpm > 4000 ? '#cc2222' : '#c09060' }}>
-          {Math.round(rpm)} <span style={{ fontSize: 9, color: '#444444' }}>rpm</span>
+        <span style={{ ...mono, fontSize: fs(10), color: '#555555', letterSpacing: '0.08em' }}>FAN RPM</span>
+        <span style={{ ...mono, fontSize: fs(14), color: rpm > 4000 ? '#cc2222' : '#c09060' }}>
+          {Math.round(rpm)} <span style={{ fontSize: fs(9), color: '#444444' }}>rpm</span>
         </span>
       </div>
       <div style={{ height: 8, background: '#0d0d0d', border: '1px solid #1e1e1e', position: 'relative' }}>
@@ -268,8 +269,8 @@ function RPMGauge({ rpm, max = 5000 }: { rpm: number; max?: number }) {
         ))}
       </div>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 3 }}>
-        <span style={{ ...mono, fontSize: 8, color: '#333333' }}>0</span>
-        <span style={{ ...mono, fontSize: 8, color: '#333333' }}>{max}</span>
+        <span style={{ ...mono, fontSize: fs(8), color: '#333333' }}>0</span>
+        <span style={{ ...mono, fontSize: fs(8), color: '#333333' }}>{max}</span>
       </div>
     </div>
   )
@@ -382,7 +383,7 @@ export function FanModule() {
         height: 46,
         gap: 14,
       }}>
-        <span style={{ ...mono, fontSize: 12, color: 'var(--cream)', letterSpacing: '0.15em' }}>
+        <span style={{ ...mono, fontSize: fs(12), color: 'var(--cream)', letterSpacing: '0.15em' }}>
           FAN CONTROL
         </span>
 
@@ -399,7 +400,7 @@ export function FanModule() {
                 background: mode === m ? '#1e1e1e' : 'transparent',
                 border: `1px solid ${mode === m ? '#c09060' : '#1e1e1e'}`,
                 color: mode === m ? '#c09060' : '#444444',
-                ...mono, fontSize: 10, letterSpacing: '0.08em',
+                ...mono, fontSize: fs(10), letterSpacing: '0.08em',
                 cursor: 'pointer',
                 transition: 'all 0.1s',
               }}
@@ -415,11 +416,11 @@ export function FanModule() {
         {rpms.map((rpm, i) => (
           <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <LEDIndicator active={rpm > 0} color="#c09060" pulse={rpm > 0} size={6} />
-            <span style={{ ...mono, fontSize: 11, color: '#c09060' }}>
+            <span style={{ ...mono, fontSize: fs(11), color: '#c09060' }}>
               {Math.round(rpm)} rpm
             </span>
             {rpms.length > 1 && (
-              <span style={{ ...mono, fontSize: 9, color: '#444444' }}>FAN {i + 1}</span>
+              <span style={{ ...mono, fontSize: fs(9), color: '#444444' }}>FAN {i + 1}</span>
             )}
           </div>
         ))}
@@ -427,7 +428,7 @@ export function FanModule() {
         {/* Connection status */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
           <LEDIndicator active={connected} color={connected ? '#22cc44' : '#cc2222'} size={6} />
-          <span style={{ ...mono, fontSize: 10, color: connected ? '#22cc44' : '#444444' }}>
+          <span style={{ ...mono, fontSize: fs(10), color: connected ? '#22cc44' : '#444444' }}>
             {connected ? 'LIVE' : 'OFFLINE'}
           </span>
         </div>
@@ -454,7 +455,7 @@ export function FanModule() {
                     background: 'transparent',
                     border: '1px solid #1e1e1e',
                     color: '#555555',
-                    ...mono, fontSize: 9, letterSpacing: '0.08em',
+                    ...mono, fontSize: fs(9), letterSpacing: '0.08em',
                     cursor: 'pointer',
                     transition: 'all 0.1s',
                   }}
@@ -475,7 +476,7 @@ export function FanModule() {
                     background: '#1a1200',
                     border: '1px solid #c09060',
                     color: '#c09060',
-                    ...mono, fontSize: 10, letterSpacing: '0.08em',
+                    ...mono, fontSize: fs(10), letterSpacing: '0.08em',
                     cursor: 'pointer',
                     transition: 'all 0.15s',
                   }}
@@ -503,7 +504,7 @@ export function FanModule() {
             </div>
 
             {/* Instructions */}
-            <div style={{ ...mono, fontSize: 9, color: '#333333', marginTop: 8, display: 'flex', gap: 16 }}>
+            <div style={{ ...mono, fontSize: fs(9), color: '#333333', marginTop: 8, display: 'flex', gap: 16 }}>
               <span>Click to add point</span>
               <span>Drag to move</span>
               <span>Double-click to remove</span>
@@ -514,8 +515,8 @@ export function FanModule() {
             <Panel label="MANUAL DUTY">
               <div style={{ padding: 16 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-                  <span style={{ ...mono, fontSize: 10, color: '#555555' }}>DUTY CYCLE</span>
-                  <span style={{ ...mono, fontSize: 20, color: '#c09060' }}>{displayDuty}%</span>
+                  <span style={{ ...mono, fontSize: fs(10), color: '#555555' }}>DUTY CYCLE</span>
+                  <span style={{ ...mono, fontSize: fs(20), color: '#c09060' }}>{displayDuty}%</span>
                 </div>
                 <input
                   type="range"
@@ -526,8 +527,8 @@ export function FanModule() {
                   style={{ width: '100%', accentColor: '#c09060', cursor: 'pointer' }}
                 />
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 3 }}>
-                  <span style={{ ...mono, fontSize: 9, color: '#333333' }}>0%</span>
-                  <span style={{ ...mono, fontSize: 9, color: '#333333' }}>100%</span>
+                  <span style={{ ...mono, fontSize: fs(9), color: '#333333' }}>0%</span>
+                  <span style={{ ...mono, fontSize: fs(9), color: '#333333' }}>100%</span>
                 </div>
 
                 <div style={{
@@ -535,8 +536,8 @@ export function FanModule() {
                   background: '#1a0e00', border: '1px solid #2e1800',
                   display: 'flex', alignItems: 'flex-start', gap: 6,
                 }}>
-                  <span style={{ color: '#cc8800', fontSize: 10, flexShrink: 0 }}>!</span>
-                  <span style={{ ...mono, fontSize: 9, color: '#664400', lineHeight: 1.5 }}>
+                  <span style={{ color: '#cc8800', fontSize: fs(10), flexShrink: 0 }}>!</span>
+                  <span style={{ ...mono, fontSize: fs(9), color: '#664400', lineHeight: 1.5 }}>
                     Manual mode overrides EC fan control. Setting duty to 0% may cause thermal throttling or shutdown.
                   </span>
                 </div>
@@ -555,10 +556,10 @@ export function FanModule() {
         ) : (
           /* Auto mode */
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16 }}>
-            <div style={{ ...mono, fontSize: 12, color: 'var(--cream)', letterSpacing: '0.15em' }}>
+            <div style={{ ...mono, fontSize: fs(12), color: 'var(--cream)', letterSpacing: '0.15em' }}>
               EC AUTO CONTROL
             </div>
-            <div style={{ ...mono, fontSize: 10, color: 'var(--gray)', maxWidth: 400, textAlign: 'center', lineHeight: 1.6 }}>
+            <div style={{ ...mono, fontSize: fs(10), color: 'var(--gray)', maxWidth: 400, textAlign: 'center', lineHeight: 1.6 }}>
               The embedded controller manages fan speed automatically based on thermal sensor readings.
               Switch to CURVE mode to define a custom temperature-to-duty mapping, or MANUAL for direct duty cycle control.
             </div>
@@ -590,8 +591,8 @@ export function FanModule() {
               {/* Hysteresis */}
               <div style={{ marginBottom: 14 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                  <span style={{ ...mono, fontSize: 10, color: '#666666' }}>HYSTERESIS</span>
-                  <span style={{ ...mono, fontSize: 11, color: 'var(--cream)' }}>
+                  <span style={{ ...mono, fontSize: fs(10), color: '#666666' }}>HYSTERESIS</span>
+                  <span style={{ ...mono, fontSize: fs(11), color: 'var(--cream)' }}>
                     {useFahrenheit ? `${Math.round(hysteresisC * 9 / 5)}°F` : `${hysteresisC}°C`}
                   </span>
                 </div>
@@ -604,7 +605,7 @@ export function FanModule() {
                   onChange={(e) => { setHysteresisC(parseInt(e.target.value)); setCurveModified(true) }}
                   style={{ width: '100%', accentColor: 'var(--cream)', cursor: 'pointer' }}
                 />
-                <div style={{ ...mono, fontSize: 8, color: '#2a2a2a', marginTop: 4 }}>
+                <div style={{ ...mono, fontSize: fs(8), color: '#2a2a2a', marginTop: 4 }}>
                   Prevents rapid fan speed oscillation near curve breakpoints
                 </div>
               </div>
@@ -612,8 +613,8 @@ export function FanModule() {
               {/* Rate limit */}
               <div style={{ marginBottom: 14 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                  <span style={{ ...mono, fontSize: 10, color: '#666666' }}>RATE LIMIT</span>
-                  <span style={{ ...mono, fontSize: 11, color: 'var(--cream)' }}>{rateLimitPct}%/step</span>
+                  <span style={{ ...mono, fontSize: fs(10), color: '#666666' }}>RATE LIMIT</span>
+                  <span style={{ ...mono, fontSize: fs(11), color: 'var(--cream)' }}>{rateLimitPct}%/step</span>
                 </div>
                 <input
                   type="range"
@@ -624,25 +625,25 @@ export function FanModule() {
                   onChange={(e) => { setRateLimitPct(parseInt(e.target.value)); setCurveModified(true) }}
                   style={{ width: '100%', accentColor: 'var(--cream)', cursor: 'pointer' }}
                 />
-                <div style={{ ...mono, fontSize: 8, color: '#2a2a2a', marginTop: 4 }}>
+                <div style={{ ...mono, fontSize: fs(8), color: '#2a2a2a', marginTop: 4 }}>
                   Max duty change per poll cycle (smooths transitions)
                 </div>
               </div>
 
               {/* Point list */}
               <div style={{ marginTop: 8, borderTop: '1px solid #1a1a1a', paddingTop: 8 }}>
-                <div style={{ ...mono, fontSize: 9, color: '#555555', letterSpacing: '0.1em', marginBottom: 6 }}>
+                <div style={{ ...mono, fontSize: fs(9), color: '#555555', letterSpacing: '0.1em', marginBottom: 6 }}>
                   BREAKPOINTS
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '3px 8px' }}>
-                  <span style={{ ...mono, fontSize: 8, color: '#333333' }}>TEMP</span>
-                  <span style={{ ...mono, fontSize: 8, color: '#333333' }}>DUTY</span>
+                  <span style={{ ...mono, fontSize: fs(8), color: '#333333' }}>TEMP</span>
+                  <span style={{ ...mono, fontSize: fs(8), color: '#333333' }}>DUTY</span>
                   {[...localCurvePoints].sort((a, b) => a[0] - b[0]).map((p, i) => (
                     <React.Fragment key={i}>
-                      <span style={{ ...mono, fontSize: 10, color: '#888888' }}>
+                      <span style={{ ...mono, fontSize: fs(10), color: '#888888' }}>
                         {useFahrenheit ? `${Math.round(p[0] * 9 / 5 + 32)}°F` : `${p[0]}°C`}
                       </span>
-                      <span style={{ ...mono, fontSize: 10, color: '#c09060' }}>{p[1]}%</span>
+                      <span style={{ ...mono, fontSize: fs(10), color: '#c09060' }}>{p[1]}%</span>
                     </React.Fragment>
                   ))}
                 </div>
@@ -656,13 +657,13 @@ export function FanModule() {
           <div style={{ padding: '10px 12px' }}>
             {lastSample ? Object.entries(lastSample.temps).map(([key, val]) => (
               <div key={key} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-                <span style={{ ...mono, fontSize: 10, color: '#555555' }}>{key}</span>
-                <span style={{ ...mono, fontSize: 11, color: val > 80 ? '#cc2222' : val > 60 ? '#c09060' : '#888888' }}>
+                <span style={{ ...mono, fontSize: fs(10), color: '#555555' }}>{key}</span>
+                <span style={{ ...mono, fontSize: fs(11), color: val > 80 ? '#cc2222' : val > 60 ? '#c09060' : '#888888' }}>
                   {useFahrenheit ? `${Math.round(val * 9 / 5 + 32)}°F` : `${Math.round(val)}°C`}
                 </span>
               </div>
             )) : (
-              <div style={{ ...mono, fontSize: 10, color: '#333333' }}>No data</div>
+              <div style={{ ...mono, fontSize: fs(10), color: '#333333' }}>No data</div>
             )}
           </div>
         </Panel>
@@ -673,15 +674,15 @@ export function FanModule() {
             <div style={{ padding: '10px 12px' }}>
               {power.battery.present_rate_ma != null && power.battery.present_voltage_mv != null && (
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-                  <span style={{ ...mono, fontSize: 10, color: '#555555' }}>DRAW</span>
-                  <span style={{ ...mono, fontSize: 11, color: '#888888' }}>
+                  <span style={{ ...mono, fontSize: fs(10), color: '#555555' }}>DRAW</span>
+                  <span style={{ ...mono, fontSize: fs(11), color: '#888888' }}>
                     {Math.abs((power.battery.present_rate_ma * power.battery.present_voltage_mv) / 1_000_000).toFixed(1)}W
                   </span>
                 </div>
               )}
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ ...mono, fontSize: 10, color: '#555555' }}>SOURCE</span>
-                <span style={{ ...mono, fontSize: 10, color: power.battery.ac_present ? '#2255aa' : '#c09060' }}>
+                <span style={{ ...mono, fontSize: fs(10), color: '#555555' }}>SOURCE</span>
+                <span style={{ ...mono, fontSize: fs(10), color: power.battery.ac_present ? '#2255aa' : '#c09060' }}>
                   {power.battery.ac_present ? 'AC' : 'BATTERY'}
                 </span>
               </div>

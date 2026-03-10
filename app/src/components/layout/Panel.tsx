@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { fs } from '../../utils/font'
 
 interface Props {
   label: string
@@ -33,7 +34,7 @@ export function Panel({ label, children, rightContent, style }: Props) {
         <span
           style={{
             fontFamily: 'JetBrains Mono, monospace',
-            fontSize: 9,
+            fontSize: fs(9),
             letterSpacing: '0.15em',
             color: 'var(--gray)',
             textTransform: 'uppercase',

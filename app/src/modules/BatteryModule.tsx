@@ -1,3 +1,4 @@
+import { fs } from '../utils/font'
 import { usePower } from '../hooks/usePower'
 import { useConfig } from '../hooks/useConfig'
 import { Panel } from '../components/layout/Panel'
@@ -25,8 +26,8 @@ function CellBar({ value, max = 100, color, segments = 20 }: { value: number; ma
 function StatRow({ label, value, color = '#888888', large }: { label: string; value: string; color?: string; large?: boolean }) {
   return (
     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-      <span style={{ ...mono, fontSize: 10, color: '#555555' }}>{label}</span>
-      <span style={{ ...mono, fontSize: large ? 16 : 12, color, lineHeight: 1 }}>{value}</span>
+      <span style={{ ...mono, fontSize: fs(10), color: '#555555' }}>{label}</span>
+      <span style={{ ...mono, fontSize: large ? fs(16) : fs(12), color, lineHeight: 1 }}>{value}</span>
     </div>
   )
 }
@@ -75,18 +76,18 @@ export function BatteryModule() {
     <div style={{ height: '100%', overflow: 'auto', background: 'var(--bg)', padding: '24px 32px' }}>
       {/* Header */}
       <div style={{ marginBottom: 28 }}>
-        <h2 style={{ ...mono, fontSize: 14, color: 'var(--cream)', letterSpacing: '0.15em', margin: 0 }}>
+        <h2 style={{ ...mono, fontSize: fs(14), color: 'var(--cream)', letterSpacing: '0.15em', margin: 0 }}>
           BATTERY HEALTH
         </h2>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 6 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <LEDIndicator active={charging} color="#22cc44" pulse={charging} size={6} />
-            <span style={{ ...mono, fontSize: 10, color: charging ? '#22cc44' : discharging ? '#c09060' : '#555555' }}>
+            <span style={{ ...mono, fontSize: fs(10), color: charging ? '#22cc44' : discharging ? '#c09060' : '#555555' }}>
               {charging ? 'CHARGING' : discharging ? 'DISCHARGING' : 'IDLE'}
             </span>
           </div>
           {soc != null && (
-            <span style={{ ...mono, fontSize: 14, color: socColor }}>
+            <span style={{ ...mono, fontSize: fs(14), color: socColor }}>
               {Math.round(soc)}%
             </span>
           )}
@@ -99,15 +100,15 @@ export function BatteryModule() {
         <Panel label="STATE OF CHARGE">
           <div style={{ padding: '14px 16px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-              <span style={{ ...mono, fontSize: 11, color: '#555555' }}>SOC</span>
-              <span style={{ ...mono, fontSize: 24, color: socColor }}>
+              <span style={{ ...mono, fontSize: fs(11), color: '#555555' }}>SOC</span>
+              <span style={{ ...mono, fontSize: fs(24), color: socColor }}>
                 {soc != null ? `${Math.round(soc)}%` : '--'}
               </span>
             </div>
             <CellBar value={soc ?? 0} color={socColor} />
             <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6 }}>
-              <span style={{ ...mono, fontSize: 9, color: '#333333' }}>0%</span>
-              <span style={{ ...mono, fontSize: 9, color: '#333333' }}>100%</span>
+              <span style={{ ...mono, fontSize: fs(9), color: '#333333' }}>0%</span>
+              <span style={{ ...mono, fontSize: fs(9), color: '#333333' }}>100%</span>
             </div>
           </div>
         </Panel>
@@ -117,8 +118,8 @@ export function BatteryModule() {
           <Panel label="BATTERY HEALTH">
             <div style={{ padding: '14px 16px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-                <span style={{ ...mono, fontSize: 11, color: '#555555' }}>HEALTH</span>
-                <span style={{ ...mono, fontSize: 20, color: healthPct < 80 ? '#cc2222' : healthPct < 90 ? '#c09060' : '#22cc44' }}>
+                <span style={{ ...mono, fontSize: fs(11), color: '#555555' }}>HEALTH</span>
+                <span style={{ ...mono, fontSize: fs(20), color: healthPct < 80 ? '#cc2222' : healthPct < 90 ? '#c09060' : '#22cc44' }}>
                   {healthPct.toFixed(1)}%
                 </span>
               </div>
@@ -174,12 +175,12 @@ export function BatteryModule() {
             {chargeLimit ? (
               <>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-                  <span style={{ ...mono, fontSize: 11, color: chargeLimit.enabled ? '#555555' : '#2a2a2a' }}>
+                  <span style={{ ...mono, fontSize: fs(11), color: chargeLimit.enabled ? '#555555' : '#2a2a2a' }}>
                     MAX CHARGE
                   </span>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <button onClick={() => handleLimitChange(-5)} style={nudgeBtn}>−</button>
-                    <span style={{ ...mono, fontSize: 16, color: chargeLimit.enabled ? '#2255aa' : '#333333', minWidth: 52, textAlign: 'center' }}>
+                    <span style={{ ...mono, fontSize: fs(16), color: chargeLimit.enabled ? '#2255aa' : '#333333', minWidth: 52, textAlign: 'center' }}>
                       {chargeLimit.enabled ? `${chargeLimit.value}%` : 'OFF'}
                     </span>
                     <button onClick={() => handleLimitChange(+5)} style={nudgeBtn}>+</button>
@@ -188,14 +189,14 @@ export function BatteryModule() {
                 {chargeLimit.enabled && (
                   <>
                     <LevelBar value={chargeLimit.value} max={100} color="#2255aa" />
-                    <div style={{ ...mono, fontSize: 9, color: '#333333', marginTop: 4 }}>
+                    <div style={{ ...mono, fontSize: fs(9), color: '#333333', marginTop: 4 }}>
                       Battery will stop charging at {chargeLimit.value}%. Extends battery lifespan.
                     </div>
                   </>
                 )}
               </>
             ) : (
-              <div style={{ ...mono, fontSize: 10, color: '#333333' }}>
+              <div style={{ ...mono, fontSize: fs(10), color: '#333333' }}>
                 Charge limit not available — requires framework-control service
               </div>
             )}
@@ -214,7 +215,7 @@ export function BatteryModule() {
                     flex: 1, padding: '10px 0', textAlign: 'center',
                     background: isActive ? `${col}18` : 'transparent',
                     border: `1px solid ${isActive ? col : '#1a1a1a'}`,
-                    ...mono, fontSize: 11,
+                    ...mono, fontSize: fs(11),
                     color: isActive ? col : '#2a2a2a', letterSpacing: '0.1em',
                   }}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
@@ -245,7 +246,7 @@ export function BatteryModule() {
 const nudgeBtn: React.CSSProperties = {
   background: 'transparent', border: '1px solid #252525',
   color: '#666666', fontFamily: 'JetBrains Mono, monospace',
-  fontSize: 14, width: 28, height: 28, cursor: 'pointer',
+  fontSize: fs(14), width: 28, height: 28, cursor: 'pointer',
   display: 'flex', alignItems: 'center', justifyContent: 'center',
   padding: 0, lineHeight: 1,
 }

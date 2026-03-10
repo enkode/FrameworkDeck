@@ -1,3 +1,4 @@
+import { fs } from '../utils/font'
 import { Construction } from 'lucide-react'
 
 interface Props {
@@ -21,7 +22,7 @@ export function PlaceholderModule({ title, description, features }: Props) {
       <Construction size={48} style={{ color: 'var(--tan-dim)', opacity: 0.5 }} />
       <h2 style={{
         fontFamily: 'JetBrains Mono, monospace',
-        fontSize: 16,
+        fontSize: fs(16),
         color: 'var(--cream)',
         letterSpacing: '0.1em',
         textTransform: 'uppercase',
@@ -30,7 +31,7 @@ export function PlaceholderModule({ title, description, features }: Props) {
       </h2>
       <p style={{
         fontFamily: 'JetBrains Mono, monospace',
-        fontSize: 11,
+        fontSize: fs(11),
         color: 'var(--cream-dim)',
         textAlign: 'center',
         maxWidth: 500,
@@ -50,7 +51,7 @@ export function PlaceholderModule({ title, description, features }: Props) {
         }}>
           <div style={{
             fontFamily: 'JetBrains Mono, monospace',
-            fontSize: 9,
+            fontSize: fs(9),
             color: 'var(--tan)',
             letterSpacing: '0.15em',
             textTransform: 'uppercase',
@@ -61,7 +62,7 @@ export function PlaceholderModule({ title, description, features }: Props) {
           {features.map((f, i) => (
             <div key={i} style={{
               fontFamily: 'JetBrains Mono, monospace',
-              fontSize: 10,
+              fontSize: fs(10),
               color: 'var(--cream-dim)',
               padding: '3px 0',
               borderBottom: i < features.length - 1 ? '1px solid var(--border)' : 'none',

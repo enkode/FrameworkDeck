@@ -1,3 +1,4 @@
+import { fs } from '../../utils/font'
 import type { TelemetrySample } from '../../api/types'
 import type { Channel } from '../../config/channels'
 
@@ -43,7 +44,7 @@ export function StatusBar({ channels, activeChannels, history, paused, connected
       <span
         style={{
           fontFamily: 'JetBrains Mono, monospace',
-          fontSize: 8,
+          fontSize: fs(8),
           letterSpacing: '0.15em',
           color: paused ? '#cc8800' : connected ? '#22cc44' : '#cc2222',
           flexShrink: 0,
@@ -60,18 +61,18 @@ export function StatusBar({ channels, activeChannels, history, paused, connected
           <span
             style={{
               fontFamily: 'JetBrains Mono, monospace',
-              fontSize: 8,
+              fontSize: fs(8),
               color: ch.color,
               letterSpacing: '0.05em',
             }}
           >
             {ch.label}
           </span>
-          <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 10, color: '#e8e0d0' }}>
+          <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: fs(10), color: '#e8e0d0' }}>
             {cur != null ? ch.formatValue(cur) : '--'}
           </span>
           {min != null && max != null && (
-            <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 8, color: '#333333' }}>
+            <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: fs(8), color: '#333333' }}>
               ↓{ch.formatValue(min)} ↑{ch.formatValue(max)}
             </span>
           )}
@@ -81,7 +82,7 @@ export function StatusBar({ channels, activeChannels, history, paused, connected
       <div style={{ flex: 1 }} />
 
       {/* Sample count */}
-      <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 8, color: '#2a2a2a' }}>
+      <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: fs(8), color: '#2a2a2a' }}>
         {history.length} samples
       </span>
     </div>

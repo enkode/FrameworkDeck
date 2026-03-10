@@ -1,4 +1,5 @@
 import type { PowerApiResponse, Config } from '../../api/types'
+import { fs } from '../../utils/font'
 import { fmtPct, fmtWatts, fmtMilliAmps, fmtMilliVolts } from '../../utils/format'
 import { LEDIndicator } from '../analog/LEDIndicator'
 import { Panel } from '../layout/Panel'
@@ -29,8 +30,8 @@ function CellBar({ value, max = 100, color, segments = 10 }: { value: number; ma
 function StatRow({ label, value, color = '#888888' }: { label: string; value: string; color?: string }) {
   return (
     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-      <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 11, color: '#444444' }}>{label}</span>
-      <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 12, color }}>{value}</span>
+      <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: fs(11), color: '#444444' }}>{label}</span>
+      <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: fs(12), color }}>{value}</span>
     </div>
   )
 }
@@ -64,7 +65,7 @@ export function BatteryPanel({ power, config, onUpdate }: Props) {
       rightContent={
         <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
           <LEDIndicator active={charging} color="#22cc44" pulse={charging} size={6} />
-          <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 10, color: '#555555' }}>
+          <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: fs(10), color: '#555555' }}>
             {charging ? 'CHG' : discharging ? 'DSCHG' : 'IDLE'}
           </span>
         </div>
@@ -74,8 +75,8 @@ export function BatteryPanel({ power, config, onUpdate }: Props) {
         {/* SoC */}
         <div style={{ marginBottom: 8 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>
-            <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 11, color: '#555555' }}>STATE OF CHARGE</span>
-            <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 16, color: soc != null && soc < 15 ? '#cc2222' : '#e8e0d0', lineHeight: 1 }}>
+            <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: fs(11), color: '#555555' }}>STATE OF CHARGE</span>
+            <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: fs(16), color: soc != null && soc < 15 ? '#cc2222' : '#e8e0d0', lineHeight: 1 }}>
               {soc != null ? `${Math.round(soc)}%` : '--'}
             </span>
           </div>
@@ -86,8 +87,8 @@ export function BatteryPanel({ power, config, onUpdate }: Props) {
         {healthPct != null && (
           <div style={{ marginBottom: 8 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>
-              <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 11, color: '#444444' }}>HEALTH</span>
-              <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 12, color: healthPct < 80 ? '#cc2222' : '#888888' }}>
+              <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: fs(11), color: '#444444' }}>HEALTH</span>
+              <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: fs(12), color: healthPct < 80 ? '#cc2222' : '#888888' }}>
                 {fmtPct(healthPct)}
               </span>
             </div>
@@ -117,12 +118,12 @@ export function BatteryPanel({ power, config, onUpdate }: Props) {
         {chargeLimit && (
           <div style={{ marginTop: 10, paddingTop: 8, borderTop: '1px solid #1a1a1a' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 5 }}>
-              <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 11, color: chargeLimit.enabled ? '#555555' : '#2a2a2a' }}>
+              <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: fs(11), color: chargeLimit.enabled ? '#555555' : '#2a2a2a' }}>
                 MAX CHARGE
               </span>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                 <button onClick={() => handleLimitChange(-5)} style={nudgeBtn}>−</button>
-                <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 13, color: chargeLimit.enabled ? '#2255aa' : '#333333', minWidth: 44, textAlign: 'center' }}>
+                <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: fs(13), color: chargeLimit.enabled ? '#2255aa' : '#333333', minWidth: 44, textAlign: 'center' }}>
                   {chargeLimit.enabled ? fmtPct(chargeLimit.value) : 'OFF'}
                 </span>
                 <button onClick={() => handleLimitChange(+5)} style={nudgeBtn}>+</button>
@@ -143,7 +144,7 @@ export function BatteryPanel({ power, config, onUpdate }: Props) {
 const nudgeBtn: React.CSSProperties = {
   background: 'transparent', border: '1px solid #222222',
   color: '#666666', fontFamily: 'JetBrains Mono, monospace',
-  fontSize: 14, width: 24, height: 24, cursor: 'pointer',
+  fontSize: fs(14), width: 24, height: 24, cursor: 'pointer',
   display: 'flex', alignItems: 'center', justifyContent: 'center',
   padding: 0, lineHeight: 1,
 }

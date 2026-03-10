@@ -41,6 +41,8 @@ interface AppState {
   setApiBase: (url: string) => void
   fontScale: number
   setFontScale: (s: number) => void
+  uiScale: number
+  setUiScale: (s: number) => void
   useFahrenheit: boolean
   setUseFahrenheit: (f: boolean) => void
 
@@ -102,6 +104,8 @@ export const useAppStore = create<AppState>()(
       setApiBase: (apiBase) => set({ apiBase }),
       fontScale: 1.0,
       setFontScale: (fontScale) => set({ fontScale }),
+      uiScale: 1.0,
+      setUiScale: (uiScale) => set({ uiScale }),
       useFahrenheit: false,
       setUseFahrenheit: (useFahrenheit) => set({ useFahrenheit }),
 
@@ -130,6 +134,7 @@ export const useAppStore = create<AppState>()(
         timeWindow: s.timeWindow,
         apiBase: s.apiBase,
         fontScale: s.fontScale,
+        uiScale: s.uiScale,
         useFahrenheit: s.useFahrenheit,
         tempWarnC: s.tempWarnC,
         yAutoScale: s.yAutoScale,

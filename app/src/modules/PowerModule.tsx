@@ -1,3 +1,4 @@
+import { fs } from '../utils/font'
 import { usePower } from '../hooks/usePower'
 import { useConfig } from '../hooks/useConfig'
 import { useAppStore } from '../store/app'
@@ -26,10 +27,10 @@ function NudgeRow({ label, value, unit, onDec, onInc, enabled = true }: {
   return (
     <div style={{ marginBottom: 10 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 3 }}>
-        <span style={{ ...mono, fontSize: 11, color: enabled ? '#666666' : '#333333', letterSpacing: '0.04em' }}>{label}</span>
+        <span style={{ ...mono, fontSize: fs(11), color: enabled ? '#666666' : '#333333', letterSpacing: '0.04em' }}>{label}</span>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
           <button onClick={onDec} style={nudgeBtn}>−</button>
-          <span style={{ ...mono, fontSize: 14, color: enabled ? '#e8e0d0' : '#444444', minWidth: 52, textAlign: 'center' }}>
+          <span style={{ ...mono, fontSize: fs(14), color: enabled ? '#e8e0d0' : '#444444', minWidth: 52, textAlign: 'center' }}>
             {value}{unit}
           </span>
           <button onClick={onInc} style={nudgeBtn}>+</button>
@@ -43,8 +44,8 @@ function InfoRow({ label, value, color = '#888888' }: { label: string; value?: s
   if (value == null) return null
   return (
     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-      <span style={{ ...mono, fontSize: 10, color: '#555555' }}>{label}</span>
-      <span style={{ ...mono, fontSize: 11, color }}>{value}</span>
+      <span style={{ ...mono, fontSize: fs(10), color: '#555555' }}>{label}</span>
+      <span style={{ ...mono, fontSize: fs(11), color }}>{value}</span>
     </div>
   )
 }
@@ -101,18 +102,18 @@ export function PowerModule() {
     <div style={{ height: '100%', overflow: 'auto', background: 'var(--bg)', padding: '24px 32px' }}>
       {/* Header */}
       <div style={{ marginBottom: 28 }}>
-        <h2 style={{ ...mono, fontSize: 14, color: 'var(--cream)', letterSpacing: '0.15em', margin: 0 }}>
+        <h2 style={{ ...mono, fontSize: fs(14), color: 'var(--cream)', letterSpacing: '0.15em', margin: 0 }}>
           POWER MANAGEMENT
         </h2>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 6 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <LEDIndicator active={acPresent} color="#2255aa" size={6} />
-            <span style={{ ...mono, fontSize: 10, color: acPresent ? '#2255aa' : '#c09060' }}>
+            <span style={{ ...mono, fontSize: fs(10), color: acPresent ? '#2255aa' : '#c09060' }}>
               {acPresent ? 'AC POWER' : 'BATTERY'}
             </span>
           </div>
           {rateW != null && (
-            <span style={{ ...mono, fontSize: 11, color: rateW > 80 ? '#cc2222' : '#888888' }}>
+            <span style={{ ...mono, fontSize: fs(11), color: rateW > 80 ? '#cc2222' : '#888888' }}>
               {rateW.toFixed(1)}W
             </span>
           )}
@@ -140,12 +141,12 @@ export function PowerModule() {
                   <InfoRow label="LIVE TDP" value={`${liveTdp}W`} color="#555555" />
                 )}
 
-                <div style={{ ...mono, fontSize: 9, color: '#333333', marginTop: 4 }}>
+                <div style={{ ...mono, fontSize: fs(9), color: '#333333', marginTop: 4 }}>
                   Range: {tdpMin}W – {tdpMax}W (step 5W)
                 </div>
               </>
             ) : (
-              <div style={{ ...mono, fontSize: 10, color: '#333333' }}>TDP control not available</div>
+              <div style={{ ...mono, fontSize: fs(10), color: '#333333' }}>TDP control not available</div>
             )}
           </div>
         </Panel>
@@ -172,14 +173,14 @@ export function PowerModule() {
                   display: 'flex', alignItems: 'flex-start', gap: 5, marginTop: 4,
                   padding: '6px 8px', background: '#1a0e00', border: '1px solid #2e1800',
                 }}>
-                  <span style={{ color: '#cc8800', fontSize: 10, flexShrink: 0 }}>!</span>
-                  <span style={{ ...mono, fontSize: 9, color: '#664400', lineHeight: 1.5 }}>
+                  <span style={{ color: '#cc8800', fontSize: fs(10), flexShrink: 0 }}>!</span>
+                  <span style={{ ...mono, fontSize: fs(9), color: '#664400', lineHeight: 1.5 }}>
                     Modifying thermal limits may cause system instability or hardware damage. Use with caution.
                   </span>
                 </div>
               </>
             ) : (
-              <div style={{ ...mono, fontSize: 10, color: '#333333' }}>Thermal limit control not available</div>
+              <div style={{ ...mono, fontSize: fs(10), color: '#333333' }}>Thermal limit control not available</div>
             )}
           </div>
         </Panel>
@@ -190,7 +191,7 @@ export function PowerModule() {
             <div style={{ padding: '12px 14px' }}>
               {caps?.supports_epp && (
                 <div style={{ marginBottom: 14 }}>
-                  <div style={{ ...mono, fontSize: 10, color: '#666666', marginBottom: 6 }}>EPP PREFERENCE</div>
+                  <div style={{ ...mono, fontSize: fs(10), color: '#666666', marginBottom: 6 }}>EPP PREFERENCE</div>
                   <div style={{ display: 'flex', gap: 3, flexWrap: 'wrap' }}>
                     {(caps.available_epp_preferences ?? ['performance', 'balance_performance', 'balance_power', 'power']).map((pref) => (
                       <button
@@ -201,7 +202,7 @@ export function PowerModule() {
                           background: liveEpp === pref ? 'var(--blue-dim)' : 'transparent',
                           border: `1px solid ${liveEpp === pref ? 'var(--blue)' : '#2a2a2a'}`,
                           color: liveEpp === pref ? 'var(--blue)' : '#555555',
-                          ...mono, fontSize: 9, letterSpacing: '0.05em',
+                          ...mono, fontSize: fs(9), letterSpacing: '0.05em',
                           cursor: 'pointer',
                         }}
                       >
@@ -213,7 +214,7 @@ export function PowerModule() {
               )}
               {caps?.supports_governor && (
                 <div>
-                  <div style={{ ...mono, fontSize: 10, color: '#666666', marginBottom: 6 }}>CPU GOVERNOR</div>
+                  <div style={{ ...mono, fontSize: fs(10), color: '#666666', marginBottom: 6 }}>CPU GOVERNOR</div>
                   <div style={{ display: 'flex', gap: 3, flexWrap: 'wrap' }}>
                     {(caps.available_governors ?? ['performance', 'powersave', 'schedutil']).map((gov) => (
                       <button
@@ -224,7 +225,7 @@ export function PowerModule() {
                           background: liveGov === gov ? 'var(--blue-dim)' : 'transparent',
                           border: `1px solid ${liveGov === gov ? 'var(--blue)' : '#2a2a2a'}`,
                           color: liveGov === gov ? 'var(--blue)' : '#555555',
-                          ...mono, fontSize: 9, letterSpacing: '0.05em',
+                          ...mono, fontSize: fs(9), letterSpacing: '0.05em',
                           cursor: 'pointer',
                         }}
                       >
@@ -250,7 +251,7 @@ export function PowerModule() {
                     flex: 1, padding: '8px 0', textAlign: 'center',
                     background: isActive ? `${col}18` : 'transparent',
                     border: `1px solid ${isActive ? col : '#1a1a1a'}`,
-                    ...mono, fontSize: 11,
+                    ...mono, fontSize: fs(11),
                     color: isActive ? col : '#2a2a2a', letterSpacing: '0.1em',
                   }}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
@@ -261,7 +262,7 @@ export function PowerModule() {
                 )
               })}
             </div>
-            <div style={{ ...mono, fontSize: 9, color: '#333333' }}>
+            <div style={{ ...mono, fontSize: fs(9), color: '#333333' }}>
               Settings apply to the {acPresent ? 'AC' : 'battery'} profile. Switch power source to configure the other profile.
             </div>
           </div>
@@ -272,8 +273,8 @@ export function PowerModule() {
           <Panel label="POWER DRAW">
             <div style={{ padding: '12px 14px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-                <span style={{ ...mono, fontSize: 11, color: '#555555' }}>DRAW</span>
-                <span style={{ ...mono, fontSize: 18, color: rateW > 80 ? '#cc2222' : 'var(--cream)' }}>
+                <span style={{ ...mono, fontSize: fs(11), color: '#555555' }}>DRAW</span>
+                <span style={{ ...mono, fontSize: fs(18), color: rateW > 80 ? '#cc2222' : 'var(--cream)' }}>
                   {rateW.toFixed(1)}W
                 </span>
               </div>
@@ -289,7 +290,7 @@ export function PowerModule() {
 const nudgeBtn: React.CSSProperties = {
   background: 'transparent', border: '1px solid #252525',
   color: '#666666', fontFamily: 'JetBrains Mono, monospace',
-  fontSize: 14, width: 28, height: 28, cursor: 'pointer',
+  fontSize: fs(14), width: 28, height: 28, cursor: 'pointer',
   display: 'flex', alignItems: 'center', justifyContent: 'center',
   padding: 0, lineHeight: 1,
 }

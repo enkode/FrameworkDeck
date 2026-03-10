@@ -1,3 +1,4 @@
+import { fs } from '../../utils/font'
 import type { Config, PowerApiResponse } from '../../api/types'
 import { FanPanel } from '../panels/FanPanel'
 import { PowerPanel } from '../panels/PowerPanel'
@@ -51,7 +52,7 @@ export function ControlsPanel({
     >
       {/* Presets */}
       <div style={{ padding: '8px 10px', borderBottom: '1px solid var(--border)' }}>
-        <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 9, color: '#333333', letterSpacing: '0.15em', marginBottom: 6 }}>
+        <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: fs(9), color: '#333333', letterSpacing: '0.15em', marginBottom: 6 }}>
           PRESET
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
@@ -65,7 +66,7 @@ export function ControlsPanel({
                 border: '1px solid #1e1e1e',
                 color: '#444444',
                 fontFamily: 'JetBrains Mono, monospace',
-                fontSize: 9,
+                fontSize: fs(9),
                 letterSpacing: '0.08em',
                 cursor: 'pointer',
                 textAlign: 'center',
@@ -81,7 +82,7 @@ export function ControlsPanel({
               }}
             >
               {p.label}
-              <div style={{ color: '#333333', fontSize: 8, marginTop: 1 }}>{p.tdp}W</div>
+              <div style={{ color: '#333333', fontSize: fs(8), marginTop: 1 }}>{p.tdp}W</div>
             </button>
           ))}
         </div>
@@ -118,7 +119,7 @@ export function ControlsPanel({
           padding: '6px 10px',
           borderTop: '1px solid #1a1a1a',
           fontFamily: 'JetBrains Mono, monospace',
-          fontSize: 8,
+          fontSize: fs(8),
           color: '#2a2a2a',
           letterSpacing: '0.05em',
         }}

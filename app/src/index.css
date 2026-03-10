@@ -124,9 +124,10 @@
 
 /* ── Accessibility ──────────────────────────────────────────────── */
 
-/* Font scaling — controlled by --font-scale CSS variable (default 1) */
+/* Font & UI scaling — controlled by CSS variables on :root */
 :root {
   --font-scale: 1;
+  --ui-scale: 1;
 }
 
 /* High contrast mode — increased border and text visibility */
@@ -149,7 +150,7 @@
 /* ── Reset ───────────────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-html, body, #root {
+html, body {
   height: 100%;
   overflow: hidden;
   background: var(--bg);
@@ -159,6 +160,31 @@ html, body, #root {
   line-height: 1.4;
   -webkit-font-smoothing: antialiased;
 }
+
+/* UI zoom — scales the entire interface proportionally (like Ctrl+/-) */
+#root {
+  height: 100%;
+  overflow: hidden;
+  zoom: var(--ui-scale, 1);
+}
+
+/*
+ * Scale Tailwind arbitrary font sizes (text-[Npx]) used in keyboard components.
+ * These classes generate fixed px values that bypass --font-scale,
+ * so we override them with calc() to respect the global scale.
+ */
+.text-\[7px\]  { font-size: calc(7px  * var(--font-scale, 1)) !important; }
+.text-\[8px\]  { font-size: calc(8px  * var(--font-scale, 1)) !important; }
+.text-\[9px\]  { font-size: calc(9px  * var(--font-scale, 1)) !important; }
+.text-\[10px\] { font-size: calc(10px * var(--font-scale, 1)) !important; }
+.text-\[11px\] { font-size: calc(11px * var(--font-scale, 1)) !important; }
+.text-\[12px\] { font-size: calc(12px * var(--font-scale, 1)) !important; }
+
+/* Also scale the standard Tailwind text utilities */
+.text-xs  { font-size: calc(0.75rem * var(--font-scale, 1)) !important; line-height: calc(1rem * var(--font-scale, 1)); }
+.text-sm  { font-size: calc(0.875rem * var(--font-scale, 1)) !important; line-height: calc(1.25rem * var(--font-scale, 1)); }
+.text-base { font-size: calc(1rem * var(--font-scale, 1)) !important; line-height: calc(1.5rem * var(--font-scale, 1)); }
+.text-lg  { font-size: calc(1.125rem * var(--font-scale, 1)) !important; line-height: calc(1.75rem * var(--font-scale, 1)); }
 
 /* ── Scrollbars ──────────────────────────────────────────────────── */
 ::-webkit-scrollbar { width: 4px; height: 4px; }

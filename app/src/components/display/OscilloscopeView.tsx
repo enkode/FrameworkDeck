@@ -1,4 +1,5 @@
 import { useRef, useEffect, useCallback, useState } from 'react'
+import { fs } from '../../utils/font'
 import type { TelemetrySample } from '../../api/types'
 import type { Channel } from '../../config/channels'
 import { useAppStore } from '../../store/app'
@@ -365,13 +366,13 @@ export function OscilloscopeView({ history, channels, activeChannels, timeWindow
             minWidth: 100,
           }}
         >
-          <div style={{ color: '#444444', fontSize: 9, fontFamily: 'monospace', marginBottom: 4 }}>
+          <div style={{ color: '#444444', fontSize: fs(9), fontFamily: 'monospace', marginBottom: 4 }}>
             {hover.timeAgo}
           </div>
           {hover.values.map((v) => (
             <div key={v.label} style={{ display: 'flex', gap: 8, justifyContent: 'space-between', marginBottom: 2 }}>
-              <span style={{ color: v.color, fontSize: 10, fontFamily: 'monospace' }}>{v.label}</span>
-              <span style={{ color: '#e8e0d0', fontSize: 10, fontFamily: 'monospace' }}>{v.value}</span>
+              <span style={{ color: v.color, fontSize: fs(10), fontFamily: 'monospace' }}>{v.label}</span>
+              <span style={{ color: '#e8e0d0', fontSize: fs(10), fontFamily: 'monospace' }}>{v.value}</span>
             </div>
           ))}
         </div>

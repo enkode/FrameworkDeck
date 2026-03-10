@@ -1,3 +1,4 @@
+import { fs } from '../utils/font'
 import { THEMES, useAppStore } from '../store/app'
 import type { Theme } from '../store/app'
 import { Panel } from '../components/layout/Panel'
@@ -18,7 +19,7 @@ function SettingRow({ label, children }: { label: string; children: React.ReactN
   return (
     <div style={{ marginBottom: 16 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-        <span style={{ ...mono, fontSize: 10, color: '#666666', letterSpacing: '0.06em' }}>{label}</span>
+        <span style={{ ...mono, fontSize: fs(10), color: '#666666', letterSpacing: '0.06em' }}>{label}</span>
       </div>
       {children}
     </div>
@@ -36,7 +37,7 @@ function ToggleButton({ active, onClick, children }: { active: boolean; onClick:
         border: `1px solid ${active ? 'var(--blue)' : '#2a2a2a'}`,
         color: active ? 'var(--blue)' : '#555555',
         ...mono,
-        fontSize: 11,
+        fontSize: fs(11),
         cursor: 'pointer',
         letterSpacing: '0.05em',
         transition: 'all 0.15s',
@@ -51,6 +52,7 @@ export function SettingsModule() {
   const {
     theme, setTheme,
     fontScale, setFontScale,
+    uiScale, setUiScale,
     useFahrenheit, setUseFahrenheit,
     reducedMotion, setReducedMotion,
     highContrast, setHighContrast,
@@ -68,10 +70,10 @@ export function SettingsModule() {
     }}>
       {/* Module header */}
       <div style={{ marginBottom: 28 }}>
-        <h2 style={{ ...mono, fontSize: 14, color: 'var(--cream)', letterSpacing: '0.15em', margin: 0 }}>
+        <h2 style={{ ...mono, fontSize: fs(14), color: 'var(--cream)', letterSpacing: '0.15em', margin: 0 }}>
           SETTINGS
         </h2>
-        <div style={{ ...mono, fontSize: 10, color: 'var(--gray)', marginTop: 4 }}>
+        <div style={{ ...mono, fontSize: fs(10), color: 'var(--gray)', marginTop: 4 }}>
           Application preferences and display configuration
         </div>
       </div>
@@ -100,11 +102,11 @@ export function SettingsModule() {
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
                       <LEDIndicator active={active} color={meta.accent} size={6} />
-                      <span style={{ ...mono, fontSize: 11, color: active ? meta.accent : '#555555', letterSpacing: '0.1em' }}>
+                      <span style={{ ...mono, fontSize: fs(11), color: active ? meta.accent : '#555555', letterSpacing: '0.1em' }}>
                         {meta.label}
                       </span>
                     </div>
-                    <div style={{ ...mono, fontSize: 9, color: active ? '#666666' : '#333333' }}>
+                    <div style={{ ...mono, fontSize: fs(9), color: active ? '#666666' : '#333333' }}>
                       {meta.desc}
                     </div>
                   </button>
@@ -117,25 +119,112 @@ export function SettingsModule() {
         {/* ── DISPLAY ───────────────────────────── */}
         <Panel label="DISPLAY">
           <div style={{ padding: '12px 14px' }}>
+            {/* Quick size presets */}
+            <SettingRow label="QUICK SIZE PRESETS">
+              <div style={{ display: 'flex', gap: 3 }}>
+                {([
+                  { label: 'S', font: 0.85, ui: 0.9 },
+                  { label: 'M', font: 1.0, ui: 1.0 },
+                  { label: 'L', font: 1.2, ui: 1.1 },
+                  { label: 'XL', font: 1.5, ui: 1.25 },
+                  { label: 'XXL', font: 1.8, ui: 1.4 },
+                ] as const).map((p) => {
+                  const active = fontScale === p.font && uiScale === p.ui
+                  return (
+                    <button
+                      key={p.label}
+                      onClick={() => { setFontScale(p.font); setUiScale(p.ui) }}
+                      style={{
+                        flex: 1,
+                        padding: '8px 0',
+                        background: active ? 'var(--blue-dim)' : 'transparent',
+                        border: `1px solid ${active ? 'var(--blue)' : '#2a2a2a'}`,
+                        color: active ? 'var(--blue)' : '#555555',
+                        ...mono,
+                        fontSize: fs(11),
+                        cursor: 'pointer',
+                        letterSpacing: '0.05em',
+                        transition: 'all 0.15s',
+                      }}
+                    >
+                      {p.label}
+                    </button>
+                  )
+                })}
+              </div>
+              <div style={{ ...mono, fontSize: fs(8), color: '#2a2a2a', marginTop: 6 }}>
+                Adjusts both text size and UI zoom together
+              </div>
+            </SettingRow>
+
             {/* Font scale */}
-            <SettingRow label="PANEL TEXT SIZE">
+            <SettingRow label="TEXT SIZE">
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                <span style={{ ...mono, fontSize: 9, color: '#333333' }}>80%</span>
-                <span style={{ ...mono, fontSize: 11, color: 'var(--cream)' }}>{Math.round(fontScale * 100)}%</span>
-                <span style={{ ...mono, fontSize: 9, color: '#333333' }}>150%</span>
+                <span style={{ ...mono, fontSize: fs(9), color: '#333333' }}>60%</span>
+                <span style={{ ...mono, fontSize: fs(11), color: 'var(--cream)' }}>{Math.round(fontScale * 100)}%</span>
+                <span style={{ ...mono, fontSize: fs(9), color: '#333333' }}>200%</span>
               </div>
               <input
                 type="range"
-                min={0.8}
-                max={1.5}
+                min={0.6}
+                max={2.0}
                 step={0.05}
                 value={fontScale}
                 onChange={(e) => setFontScale(parseFloat(e.target.value))}
                 style={{ width: '100%', accentColor: 'var(--cream)', cursor: 'pointer' }}
               />
+              <div style={{ ...mono, fontSize: fs(8), color: '#2a2a2a', marginTop: 6 }}>
+                Scales all text independently of the interface layout
+              </div>
             </SettingRow>
 
-            {/* Temperature unit */}
+            {/* UI zoom */}
+            <SettingRow label="UI ZOOM">
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                <span style={{ ...mono, fontSize: fs(9), color: '#333333' }}>75%</span>
+                <span style={{ ...mono, fontSize: fs(11), color: 'var(--cream)' }}>{Math.round(uiScale * 100)}%</span>
+                <span style={{ ...mono, fontSize: fs(9), color: '#333333' }}>200%</span>
+              </div>
+              <input
+                type="range"
+                min={0.75}
+                max={2.0}
+                step={0.05}
+                value={uiScale}
+                onChange={(e) => setUiScale(parseFloat(e.target.value))}
+                style={{ width: '100%', accentColor: 'var(--tan)', cursor: 'pointer' }}
+              />
+              <div style={{ ...mono, fontSize: fs(8), color: '#2a2a2a', marginTop: 6 }}>
+                Scales the entire interface proportionally (like browser zoom)
+              </div>
+            </SettingRow>
+
+            {/* Reset button */}
+            {(fontScale !== 1.0 || uiScale !== 1.0) && (
+              <button
+                onClick={() => { setFontScale(1.0); setUiScale(1.0) }}
+                style={{
+                  width: '100%',
+                  padding: '6px 0',
+                  background: 'transparent',
+                  border: '1px solid #2a2a2a',
+                  color: '#555555',
+                  ...mono,
+                  fontSize: fs(10),
+                  cursor: 'pointer',
+                  letterSpacing: '0.05em',
+                  marginTop: 4,
+                }}
+              >
+                RESET TO DEFAULTS
+              </button>
+            )}
+          </div>
+        </Panel>
+
+        {/* ── UNITS ────────────────────────────────── */}
+        <Panel label="UNITS">
+          <div style={{ padding: '12px 14px' }}>
             <SettingRow label="TEMPERATURE UNIT">
               <div style={{ display: 'flex', gap: 3 }}>
                 <ToggleButton active={!useFahrenheit} onClick={() => setUseFahrenheit(false)}>°C</ToggleButton>
@@ -154,7 +243,7 @@ export function SettingsModule() {
                 <ToggleButton active={!highContrast} onClick={() => setHighContrast(false)}>OFF</ToggleButton>
                 <ToggleButton active={highContrast} onClick={() => setHighContrast(true)}>ON</ToggleButton>
               </div>
-              <div style={{ ...mono, fontSize: 8, color: '#2a2a2a', marginTop: 6 }}>
+              <div style={{ ...mono, fontSize: fs(8), color: '#2a2a2a', marginTop: 6 }}>
                 Increases text contrast and border visibility
               </div>
             </SettingRow>
@@ -165,7 +254,7 @@ export function SettingsModule() {
                 <ToggleButton active={!reducedMotion} onClick={() => setReducedMotion(false)}>OFF</ToggleButton>
                 <ToggleButton active={reducedMotion} onClick={() => setReducedMotion(true)}>ON</ToggleButton>
               </div>
-              <div style={{ ...mono, fontSize: 8, color: '#2a2a2a', marginTop: 6 }}>
+              <div style={{ ...mono, fontSize: fs(8), color: '#2a2a2a', marginTop: 6 }}>
                 Disables animations, transitions, and CRT effects
               </div>
             </SettingRow>
@@ -181,7 +270,7 @@ export function SettingsModule() {
                 <ToggleButton active={!yAutoScale} onClick={() => setYAutoScale(false)}>FIXED</ToggleButton>
                 <ToggleButton active={yAutoScale} onClick={() => setYAutoScale(true)}>AUTO</ToggleButton>
               </div>
-              <div style={{ ...mono, fontSize: 8, color: '#2a2a2a', marginTop: 6 }}>
+              <div style={{ ...mono, fontSize: fs(8), color: '#2a2a2a', marginTop: 6 }}>
                 AUTO zooms Y-axis to fit live data range
               </div>
             </SettingRow>
@@ -189,11 +278,11 @@ export function SettingsModule() {
             {/* Temperature warning */}
             <SettingRow label="TEMP WARNING THRESHOLD">
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                <span style={{ ...mono, fontSize: 9, color: '#333333' }}>{useFahrenheit ? '158°F' : '70°C'}</span>
-                <span style={{ ...mono, fontSize: 11, color: tempWarnC >= 90 ? '#cc2222' : '#c09060' }}>
+                <span style={{ ...mono, fontSize: fs(9), color: '#333333' }}>{useFahrenheit ? '158°F' : '70°C'}</span>
+                <span style={{ ...mono, fontSize: fs(11), color: tempWarnC >= 90 ? '#cc2222' : '#c09060' }}>
                   {useFahrenheit ? `${Math.round(tempWarnC * 9 / 5 + 32)}°F` : `${tempWarnC}°C`}
                 </span>
-                <span style={{ ...mono, fontSize: 9, color: '#333333' }}>{useFahrenheit ? '212°F' : '100°C'}</span>
+                <span style={{ ...mono, fontSize: fs(9), color: '#333333' }}>{useFahrenheit ? '212°F' : '100°C'}</span>
               </div>
               <input
                 type="range"
@@ -224,12 +313,12 @@ export function SettingsModule() {
                   border: '1px solid #2a2a2a',
                   color: 'var(--cream)',
                   ...mono,
-                  fontSize: 11,
+                  fontSize: fs(11),
                   outline: 'none',
                   boxSizing: 'border-box',
                 }}
               />
-              <div style={{ ...mono, fontSize: 8, color: '#2a2a2a', marginTop: 6 }}>
+              <div style={{ ...mono, fontSize: fs(8), color: '#2a2a2a', marginTop: 6 }}>
                 framework-control REST API base URL
               </div>
             </SettingRow>
