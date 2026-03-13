@@ -11,3 +11,5 @@ repo/framework-control/service/target/
 Thumbs.db
 app/electron/
 app/README.md
+app/src-tauri/.cargo/config.toml
+app/src-tauri/target/
