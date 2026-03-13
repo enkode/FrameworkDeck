@@ -2,7 +2,7 @@
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "Framework Deck",
   "version": "2.0.0",
-  "identifier": "com.antigravity.framework-deck",
+  "identifier": "io.github.enkode.frameworkdeck",
   "build": {
     "beforeDevCommand": "npm run dev",
     "devUrl": "http://localhost:5174",
