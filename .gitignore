@@ -9,3 +9,5 @@ repo/framework-control/service/target/
 *.log
 .DS_Store
 Thumbs.db
+app/electron/
+app/README.md

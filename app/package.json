@@ -2,7 +2,7 @@
   "name": "framework-deck",
   "productName": "Framework Deck",
   "private": true,
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "The ultimate Framework laptop companion — system monitoring, keyboard configurator, fan control, power management, and more in one tool.",
   "type": "module",
   "scripts": {
