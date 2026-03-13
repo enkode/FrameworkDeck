@@ -36,17 +36,25 @@ Built with Tauri 2 + React 19 + TypeScript + Tailwind CSS. Lightweight native wi
 
 ## Download
 
-> **Windows installer — no setup required beyond installing the app.**
+> **[⬇ Latest Release](https://github.com/enkode/FrameworkDeck/releases/latest)** — Windows and Linux installers, no setup required.
 
-| Platform | Download |
-|----------|----------|
-| Windows 11/10 (64-bit) | [**Latest Release →**](https://github.com/enkode/FrameworkDeck/releases/latest) |
+| Platform | Installer | Notes |
+|----------|-----------|-------|
+| **Windows 11/10** | `.exe` (NSIS) | Recommended for most Windows users |
+| **Windows 11/10** | `.msi` | Enterprise / managed deployments |
+| **Linux** (any distro) | `.AppImage` | Universal — `chmod +x` and run, no install needed |
+| **Debian / Ubuntu** | `.deb` | Native package — `sudo dpkg -i framework-deck_*.deb` |
+| **Fedora / RHEL** | `.rpm` | Native package — `sudo rpm -i framework-deck-*.rpm` |
 
-The NSIS installer (`*-setup.exe`) is recommended for most users. An MSI is also provided for managed/enterprise deployments.
-
-**For telemetry features** (oscilloscope dashboard, fan control, power management, battery, system info): the [framework-control](https://github.com/ozturkkl/framework-control) service must be running. See [Setup](#setup).
+**For telemetry features** (oscilloscope, fan control, power, battery, system info): the [framework-control](https://github.com/ozturkkl/framework-control) service must be running. See [Setup](#setup).
 
 **The keyboard configurator works standalone** via WebHID — no backend service needed.
+
+### Linux Notes
+
+- **AppImage** is the easiest option — make it executable and run. Works on any distro.
+- **WebHID** requires Chromium-based WebView. Most distros ship `webkit2gtk-4.1` which supports this. If the keyboard configurator can't connect, ensure `webkit2gtk-4.1` is installed.
+- **framework-control on Linux** uses `ectool` for hardware access. See the [framework-control Linux setup guide](https://github.com/ozturkkl/framework-control#linux).
 
 ---
 
@@ -268,17 +276,35 @@ The two-key bootloader combo is a **hardware circuit** that bypasses firmware en
 
 Framework Deck uses [ozturkkl/framework-control](https://github.com/ozturkkl/framework-control) — a Rust service that wraps the official `framework_tool` CLI and exposes a REST API on port 8090.
 
-Follow the setup instructions in that repo. Once it's running, Framework Deck connects automatically.
+**Windows:** Follow the [framework-control Windows setup](https://github.com/ozturkkl/framework-control#windows).
 
-If you're running `framework-control` on a non-default port or remotely, update the endpoint in **Settings → Service → API Endpoint**.
+**Linux:** Follow the [framework-control Linux setup](https://github.com/ozturkkl/framework-control#linux). The service uses `ectool` for EC access — you'll need to run it with appropriate permissions or set up a udev rule.
+
+Once `framework-control` is running, Framework Deck connects automatically. If you're using a non-default port or running the service on another machine, update the endpoint in **Settings → Service → API Endpoint**.
 
 ### 2. Install Framework Deck
 
-Download the latest installer from [Releases](https://github.com/enkode/FrameworkDeck/releases/latest) and run it. No configuration needed.
+**Windows:** Download the `.exe` or `.msi` from [Releases](https://github.com/enkode/FrameworkDeck/releases/latest) and run it.
+
+**Linux (AppImage):**
+```bash
+chmod +x Framework_Deck_*.AppImage
+./Framework_Deck_*.AppImage
+```
+
+**Debian / Ubuntu:**
+```bash
+sudo dpkg -i framework-deck_*_amd64.deb
+```
+
+**Fedora / RHEL:**
+```bash
+sudo rpm -i framework-deck-*-1.x86_64.rpm
+```
 
 ### 3. Connect a keyboard or macropad (optional)
 
-Open the **Keyboard** module, click **Connect Your Device**, and select your Framework keyboard or macropad from the browser device picker. WebHID requires Chrome or Edge (89+).
+Open the **Keyboard** module, click **Connect Your Device**, and select your Framework keyboard or macropad from the device picker. WebHID requires a Chromium-based WebView (shipped with Tauri on both Windows and Linux).
 
 ---
 
@@ -288,7 +314,18 @@ Open the **Keyboard** module, click **Connect Your Device**, and select your Fra
 
 - [Node.js](https://nodejs.org/) 18+
 - [Rust](https://rustup.rs/) stable toolchain
-- Windows: [Visual C++ Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/)
+- **Windows:** [Visual C++ Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/)
+- **Linux (Debian/Ubuntu):**
+  ```bash
+  sudo apt install libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev \
+    patchelf libssl-dev libgtk-3-dev libayatana-appindicator3-dev \
+    libsoup-3.0-dev libjavascriptcoregtk-4.1-dev
+  ```
+- **Linux (Fedora):**
+  ```bash
+  sudo dnf install webkit2gtk4.1-devel libappindicator-gtk3-devel \
+    librsvg2-devel patchelf openssl-devel gtk3-devel
+  ```
 
 ### Clone
 

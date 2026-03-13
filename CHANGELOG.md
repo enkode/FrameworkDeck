@@ -8,6 +8,19 @@ Format: `[version] YYYY-MM-DD — description`
 
 ## Framework Deck
 
+### [2.0.1] 2026-03-13 — Linux Support & CI
+
+**feat: add Linux installer builds and cross-platform CI**
+- Linux builds: `.AppImage` (universal), `.deb` (Debian/Ubuntu), `.rpm` (Fedora/RHEL)
+- GitHub Actions release workflow now builds Windows + Linux installers on every tag push
+- Tauri bundle targets set to `"all"` — builds all available package formats per platform
+- Linux-specific bundle config: deb/rpm dependency declarations, AppImage media framework bundling
+- Updated README: Linux download table, Linux install instructions, Linux build-from-source prerequisites
+- Updated release template with Linux package descriptions and notes
+- Added bug report and feature request issue templates
+
+---
+
 ### [2.0.0] 2026-03-10 — Accessibility & Display System
 
 **feat: comprehensive font scaling, UI zoom, and accessibility system** (`d4e48a7`)
