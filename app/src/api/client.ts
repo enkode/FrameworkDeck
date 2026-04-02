@@ -12,7 +12,7 @@ const getBase = () =>
   (import.meta.env.VITE_API_BASE as string | undefined) || ''
 
 const getToken = () =>
-  (import.meta.env.VITE_API_TOKEN as string | undefined) || '4c07a4f2-0e64-4c43-bcb0-093cd55a55b6'
+  (import.meta.env.VITE_API_TOKEN as string | undefined) || ''
 
 export async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
   // In Tauri: use Rust IPC — no CORS, no Origin header, no token leakage in JS
@@ -33,7 +33,8 @@ export async function apiFetch<T>(path: string, options?: RequestInit): Promise<
       }
       return JSON.parse(result) as T
     } catch (err) {
-      throw new Error(`API ${path}: ${err}`)
+      const msg = err instanceof Error ? err.message : String(err)
+      throw new Error(`API ${path}: ${msg.includes('Connection') ? 'Service unreachable — is framework-control running?' : msg}`)
     }
   }
 
@@ -48,7 +49,11 @@ export async function apiFetch<T>(path: string, options?: RequestInit): Promise<
 
   const res = await fetch(url, { ...options, headers })
   if (!res.ok) {
-    throw new Error(`API ${path}: ${res.status} ${res.statusText}`)
+    const detail = res.status === 0 ? 'Network error — service may be offline'
+      : res.status === 401 ? 'Unauthorized — check API token in settings'
+      : res.status === 404 ? 'Endpoint not found — check API version compatibility'
+      : `${res.status} ${res.statusText}`
+    throw new Error(`API ${path}: ${detail}`)
   }
   if (res.status === 204 || res.headers.get('content-length') === '0') {
     return undefined as unknown as T

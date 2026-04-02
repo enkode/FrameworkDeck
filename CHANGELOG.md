@@ -8,6 +8,41 @@ Format: `[version] YYYY-MM-DD — description`
 
 ## Framework Deck
 
+### [2.1.0] 2026-04-01 — Performance, LED Matrix, & Quality of Life
+
+**Oscilloscope rendering improvements:**
+- Switched from `setInterval(100ms)` to `requestAnimationFrame` — smoother trace rendering with smart dirty-checking (only redraws when data changes or 200ms elapses)
+- CSS variable resolution now cached with 2s TTL — eliminates `getComputedStyle` calls every frame
+- Cache auto-invalidates on theme change
+- Tooltip now flips horizontally when near right edge and clamps vertically — no more off-screen tooltips
+- Scanlines overlay respects reduced motion preference
+- Added ARIA label to oscilloscope container for accessibility
+
+**LED Matrix editor overhaul:**
+- 6 new built-in patterns: diagonal, stripes, vertical stripes, diamond, rain, FW logo
+- Transform operations: flip horizontal, flip vertical, invert, shift left, shift right
+- Full undo/redo with Ctrl+Z/Ctrl+Y keyboard shortcuts (30-step history)
+- Save/load custom patterns to localStorage with named entries
+- Export/import patterns via clipboard (compact hex encoding)
+- Delete saved patterns
+
+**Status bar improvements:**
+- Live data rate indicator (samples per second)
+- Session uptime counter
+
+**API client hardening:**
+- Removed hardcoded API token from frontend source (now env-only via `VITE_API_TOKEN`)
+- Descriptive error messages: network errors, auth failures, 404s now explain what went wrong
+- Tauri IPC errors detect connection issues and suggest checking if service is running
+
+**History buffer management:**
+- Frontend history capped at 7200 samples (~60 min at 2 sps) to prevent unbounded memory growth
+
+**Offline screen:**
+- Shows actionable troubleshooting info (binary name, default endpoint, settings pointer)
+
+---
+
 ### [2.0.1] 2026-03-13 — Linux Support & CI
 
 **feat: add Linux installer builds and cross-platform CI**

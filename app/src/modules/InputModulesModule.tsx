@@ -8,6 +8,7 @@ const mono: React.CSSProperties = { fontFamily: 'JetBrains Mono, monospace' }
 // Framework 16 LED Matrix is 9 rows x 34 columns
 const MATRIX_ROWS = 9
 const MATRIX_COLS = 34
+const MAX_UNDO = 30
 
 type Pattern = boolean[][]
 
@@ -36,6 +37,43 @@ const BUILTIN_PATTERNS: Record<string, () => Pattern> = {
       r === Math.floor(Math.sin(c / 3) * 3 + 4)
     )
   ),
+  diagonal: () => Array.from({ length: MATRIX_ROWS }, (_, r) =>
+    Array.from({ length: MATRIX_COLS }, (_, c) => (r + c) % 4 === 0)
+  ),
+  stripes: () => Array.from({ length: MATRIX_ROWS }, (_, r) =>
+    Array.from({ length: MATRIX_COLS }, () => r % 3 === 0)
+  ),
+  vstripes: () => Array.from({ length: MATRIX_ROWS }, () =>
+    Array.from({ length: MATRIX_COLS }, (_, c) => c % 4 === 0)
+  ),
+  diamond: () => {
+    const cx = Math.floor(MATRIX_COLS / 2)
+    const cy = Math.floor(MATRIX_ROWS / 2)
+    return Array.from({ length: MATRIX_ROWS }, (_, r) =>
+      Array.from({ length: MATRIX_COLS }, (_, c) => {
+        const dist = Math.abs(r - cy) * 2 + Math.abs(c - cx)
+        return dist <= 10 || (dist >= 14 && dist <= 16)
+      })
+    )
+  },
+  rain: () => Array.from({ length: MATRIX_ROWS }, (_, r) =>
+    Array.from({ length: MATRIX_COLS }, (_, c) =>
+      (c * 7 + r * 3) % 11 < 2
+    )
+  ),
+  fw: () => {
+    // "FW" logo pattern
+    const p = createEmptyPattern()
+    // F
+    for (let r = 1; r <= 7; r++) p[r][3] = true
+    for (let c = 3; c <= 7; c++) { p[1][c] = true; p[4][c] = true }
+    // W
+    for (let r = 1; r <= 7; r++) { p[r][10] = true; p[r][16] = true }
+    for (let r = 5; r <= 7; r++) { p[r][12] = true; p[r][14] = true }
+    p[7][11] = true; p[7][13] = true; p[7][15] = true
+    p[6][11] = true; p[6][15] = true
+    return p
+  },
 }
 
 // ── LED Matrix Editor ────────────────────────────────────────
@@ -69,6 +107,8 @@ function LEDMatrixEditor({ pattern, onPatternChange }: { pattern: Pattern; onPat
         const y = gap + r * (cellSize + gap)
         const on = pattern[r][c]
 
+        ctx.fillStyle = on ? 'var(--cream, #e8e0d0)' : '#161616'
+        // Canvas can't resolve CSS vars, use fallback
         ctx.fillStyle = on ? '#e8e0d0' : '#161616'
         ctx.fillRect(x, y, cellSize, cellSize)
 
@@ -148,6 +188,61 @@ const FRAMEWORK_16_SLOTS: SlotInfo[] = [
   { position: 'INPUT-3', type: 'led-matrix', name: 'LED Matrix', connected: false },
 ]
 
+// ── Pattern Storage ─────────────────────────────────────────
+
+const STORAGE_KEY = 'framework-deck-led-patterns'
+
+interface SavedPattern {
+  name: string
+  data: boolean[][]
+  savedAt: number
+}
+
+function loadSavedPatterns(): SavedPattern[] {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY)
+    return raw ? JSON.parse(raw) : []
+  } catch { return [] }
+}
+
+function persistPatterns(patterns: SavedPattern[]) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(patterns))
+}
+
+function exportPattern(pattern: Pattern): string {
+  // Compact format: each row as a hex string
+  const rows = pattern.map((row) => {
+    let hex = ''
+    for (let i = 0; i < row.length; i += 4) {
+      let nibble = 0
+      for (let b = 0; b < 4 && i + b < row.length; b++) {
+        if (row[i + b]) nibble |= (1 << (3 - b))
+      }
+      hex += nibble.toString(16)
+    }
+    return hex
+  })
+  return JSON.stringify({ v: 1, rows: MATRIX_ROWS, cols: MATRIX_COLS, data: rows })
+}
+
+function importPattern(json: string): Pattern | null {
+  try {
+    const obj = JSON.parse(json)
+    if (obj.v !== 1 || obj.rows !== MATRIX_ROWS || obj.cols !== MATRIX_COLS) return null
+    return obj.data.map((hex: string) => {
+      const row: boolean[] = []
+      for (let i = 0; i < hex.length; i++) {
+        const nibble = parseInt(hex[i], 16)
+        for (let b = 0; b < 4 && row.length < MATRIX_COLS; b++) {
+          row.push(!!(nibble & (1 << (3 - b))))
+        }
+      }
+      while (row.length < MATRIX_COLS) row.push(false)
+      return row
+    })
+  } catch { return null }
+}
+
 // ── Module ───────────────────────────────────────────────────
 
 export function InputModulesModule() {
@@ -155,6 +250,102 @@ export function InputModulesModule() {
   const [brightness, setBrightness] = useState(80)
   const [animating, setAnimating] = useState(false)
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null)
+
+  // Undo/redo
+  const [undoStack, setUndoStack] = useState<Pattern[]>([])
+  const [redoStack, setRedoStack] = useState<Pattern[]>([])
+
+  const pushUndo = useCallback((prev: Pattern) => {
+    setUndoStack((stack) => [...stack.slice(-MAX_UNDO), prev])
+    setRedoStack([])
+  }, [])
+
+  const handlePatternChange = useCallback((newPattern: Pattern) => {
+    pushUndo(pattern)
+    setPattern(newPattern)
+  }, [pattern, pushUndo])
+
+  const undo = useCallback(() => {
+    if (undoStack.length === 0) return
+    setRedoStack((stack) => [...stack, pattern])
+    setPattern(undoStack[undoStack.length - 1])
+    setUndoStack((stack) => stack.slice(0, -1))
+  }, [undoStack, pattern])
+
+  const redo = useCallback(() => {
+    if (redoStack.length === 0) return
+    setUndoStack((stack) => [...stack, pattern])
+    setPattern(redoStack[redoStack.length - 1])
+    setRedoStack((stack) => stack.slice(0, -1))
+  }, [redoStack, pattern])
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) { e.preventDefault(); undo() }
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) { e.preventDefault(); redo() }
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [undo, redo])
+
+  // Saved patterns
+  const [savedPatterns, setSavedPatterns] = useState<SavedPattern[]>(loadSavedPatterns)
+  const [saveName, setSaveName] = useState('')
+
+  const savePattern = () => {
+    const name = saveName.trim() || `Pattern ${savedPatterns.length + 1}`
+    const entry: SavedPattern = { name, data: pattern, savedAt: Date.now() }
+    const updated = [...savedPatterns, entry]
+    setSavedPatterns(updated)
+    persistPatterns(updated)
+    setSaveName('')
+  }
+
+  const deleteSavedPattern = (idx: number) => {
+    const updated = savedPatterns.filter((_, i) => i !== idx)
+    setSavedPatterns(updated)
+    persistPatterns(updated)
+  }
+
+  // Import/Export
+  const handleExport = () => {
+    const data = exportPattern(pattern)
+    navigator.clipboard.writeText(data)
+  }
+
+  const handleImport = async () => {
+    try {
+      const text = await navigator.clipboard.readText()
+      const imported = importPattern(text)
+      if (imported) {
+        pushUndo(pattern)
+        setPattern(imported)
+      }
+    } catch { /* clipboard not available */ }
+  }
+
+  // Transform operations
+  const mirrorH = () => {
+    pushUndo(pattern)
+    setPattern(pattern.map((row) => [...row].reverse()))
+  }
+  const mirrorV = () => {
+    pushUndo(pattern)
+    setPattern([...pattern].reverse())
+  }
+  const invert = () => {
+    pushUndo(pattern)
+    setPattern(pattern.map((row) => row.map((v) => !v)))
+  }
+  const shiftLeft = () => {
+    pushUndo(pattern)
+    setPattern(pattern.map((row) => [...row.slice(1), false]))
+  }
+  const shiftRight = () => {
+    pushUndo(pattern)
+    setPattern(pattern.map((row) => [false, ...row.slice(0, -1)]))
+  }
 
   // Count lit LEDs
   const litCount = pattern.reduce((sum, row) => sum + row.filter(Boolean).length, 0)
@@ -190,6 +381,18 @@ export function InputModulesModule() {
 
         <div style={{ flex: 1 }} />
 
+        {/* Undo/Redo */}
+        <div style={{ display: 'flex', gap: 2 }}>
+          <button onClick={undo} disabled={undoStack.length === 0} style={headerBtnStyle(undoStack.length > 0)} title="Undo (Ctrl+Z)">
+            UNDO
+          </button>
+          <button onClick={redo} disabled={redoStack.length === 0} style={headerBtnStyle(redoStack.length > 0)} title="Redo (Ctrl+Y)">
+            REDO
+          </button>
+        </div>
+
+        <div style={{ width: 1, height: 22, background: 'var(--border-2)' }} />
+
         <span style={{ ...mono, fontSize: fs(9), color: '#333333' }}>
           Requires Tauri + inputmodule-rs backend
         </span>
@@ -209,7 +412,7 @@ export function InputModulesModule() {
           {Object.entries(BUILTIN_PATTERNS).map(([key, fn]) => (
             <button
               key={key}
-              onClick={() => setPattern(fn())}
+              onClick={() => handlePatternChange(fn())}
               style={{
                 padding: '4px 12px',
                 background: 'transparent',
@@ -227,6 +430,34 @@ export function InputModulesModule() {
           ))}
         </div>
 
+        {/* Transform buttons */}
+        <div style={{ display: 'flex', gap: 4 }}>
+          {[
+            { label: 'FLIP H', fn: mirrorH },
+            { label: 'FLIP V', fn: mirrorV },
+            { label: 'INVERT', fn: invert },
+            { label: '← SHIFT', fn: shiftLeft },
+            { label: 'SHIFT →', fn: shiftRight },
+          ].map(({ label, fn }) => (
+            <button
+              key={label}
+              onClick={fn}
+              style={{
+                padding: '4px 10px',
+                background: 'transparent',
+                border: '1px solid #1a1a1a',
+                color: '#444444',
+                ...mono, fontSize: fs(9), letterSpacing: '0.06em',
+                cursor: 'pointer',
+              }}
+              onMouseOver={(e) => { e.currentTarget.style.borderColor = '#c09060'; e.currentTarget.style.color = '#c09060' }}
+              onMouseOut={(e) => { e.currentTarget.style.borderColor = '#1a1a1a'; e.currentTarget.style.color = '#444444' }}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+
         {/* Matrix canvas */}
         <div style={{
           background: '#050505',
@@ -235,13 +466,15 @@ export function InputModulesModule() {
           display: 'inline-block',
           alignSelf: 'flex-start',
         }}>
-          <LEDMatrixEditor pattern={pattern} onPatternChange={setPattern} />
+          <LEDMatrixEditor pattern={pattern} onPatternChange={handlePatternChange} />
         </div>
 
         {/* Instructions */}
         <div style={{ ...mono, fontSize: fs(9), color: '#333333', display: 'flex', gap: 16 }}>
           <span>Click/drag to draw</span>
           <span>{litCount}/{totalLeds} LEDs active</span>
+          <span>Ctrl+Z undo</span>
+          <span>Ctrl+Y redo</span>
         </div>
 
         {/* Module Slots */}
@@ -359,6 +592,84 @@ export function InputModulesModule() {
           </div>
         </Panel>
 
+        {/* Import / Export */}
+        <Panel label="SHARE">
+          <div style={{ padding: '10px 12px' }}>
+            <div style={{ display: 'flex', gap: 3, marginBottom: 8 }}>
+              <button onClick={handleExport} style={actionBtnStyle}>
+                COPY
+              </button>
+              <button onClick={handleImport} style={actionBtnStyle}>
+                PASTE
+              </button>
+            </div>
+            <div style={{ ...mono, fontSize: fs(8), color: '#2a2a2a' }}>
+              Copy pattern to clipboard or paste from clipboard
+            </div>
+          </div>
+        </Panel>
+
+        {/* Save / Load */}
+        <Panel label="SAVED PATTERNS">
+          <div style={{ padding: '10px 12px' }}>
+            {/* Save form */}
+            <div style={{ display: 'flex', gap: 4, marginBottom: 8 }}>
+              <input
+                type="text"
+                placeholder="Name..."
+                value={saveName}
+                onChange={(e) => setSaveName(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && savePattern()}
+                style={{
+                  flex: 1, padding: '4px 8px',
+                  background: '#0d0d0d', border: '1px solid #1e1e1e',
+                  color: 'var(--cream)', ...mono, fontSize: fs(9),
+                  outline: 'none',
+                }}
+              />
+              <button onClick={savePattern} style={actionBtnStyle}>
+                SAVE
+              </button>
+            </div>
+
+            {/* Pattern list */}
+            {savedPatterns.length === 0 ? (
+              <div style={{ ...mono, fontSize: fs(9), color: '#2a2a2a' }}>No saved patterns</div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                {savedPatterns.map((sp, i) => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <button
+                      onClick={() => handlePatternChange(sp.data)}
+                      style={{
+                        flex: 1, padding: '4px 8px', textAlign: 'left',
+                        background: 'transparent', border: '1px solid #1a1a1a',
+                        color: '#666666', ...mono, fontSize: fs(9), cursor: 'pointer',
+                      }}
+                      onMouseOver={(e) => { e.currentTarget.style.borderColor = 'var(--cream)'; e.currentTarget.style.color = 'var(--cream)' }}
+                      onMouseOut={(e) => { e.currentTarget.style.borderColor = '#1a1a1a'; e.currentTarget.style.color = '#666666' }}
+                    >
+                      {sp.name}
+                    </button>
+                    <button
+                      onClick={() => deleteSavedPattern(i)}
+                      style={{
+                        background: 'transparent', border: '1px solid #1a1a1a',
+                        color: '#333333', ...mono, fontSize: fs(9), cursor: 'pointer',
+                        padding: '4px 6px',
+                      }}
+                      onMouseOver={(e) => { e.currentTarget.style.borderColor = '#cc2222'; e.currentTarget.style.color = '#cc2222' }}
+                      onMouseOut={(e) => { e.currentTarget.style.borderColor = '#1a1a1a'; e.currentTarget.style.color = '#333333' }}
+                    >
+                      DEL
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </Panel>
+
         {/* Backend note */}
         <Panel label="STATUS">
           <div style={{ padding: '10px 12px' }}>
@@ -377,4 +688,25 @@ export function InputModulesModule() {
       </div>
     </div>
   )
+}
+
+const headerBtnStyle = (enabled: boolean): React.CSSProperties => ({
+  padding: '3px 10px',
+  background: 'transparent',
+  border: `1px solid ${enabled ? '#1e1e1e' : '#141414'}`,
+  color: enabled ? '#555555' : '#222222',
+  ...mono, fontSize: fs(9), letterSpacing: '0.06em',
+  cursor: enabled ? 'pointer' : 'default',
+  opacity: enabled ? 1 : 0.5,
+})
+
+const actionBtnStyle: React.CSSProperties = {
+  padding: '4px 10px',
+  background: 'transparent',
+  border: '1px solid #1e1e1e',
+  color: '#555555',
+  fontFamily: 'JetBrains Mono, monospace',
+  fontSize: 'calc(9px * var(--font-scale, 1))',
+  letterSpacing: '0.06em',
+  cursor: 'pointer',
 }

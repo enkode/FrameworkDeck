@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react'
 import { fs } from '../../utils/font'
 import type { TelemetrySample } from '../../api/types'
 import type { Channel } from '../../config/channels'
@@ -10,9 +11,28 @@ interface Props {
   connected: boolean
 }
 
+const SESSION_START = Date.now()
+
+function formatUptime(ms: number): string {
+  const s = Math.floor(ms / 1000)
+  const h = Math.floor(s / 3600)
+  const m = Math.floor((s % 3600) / 60)
+  const sec = s % 60
+  if (h > 0) return `${h}h${String(m).padStart(2, '0')}m`
+  if (m > 0) return `${m}m${String(sec).padStart(2, '0')}s`
+  return `${sec}s`
+}
+
 export function StatusBar({ channels, activeChannels, history, paused, connected }: Props) {
   const lastSample = history[history.length - 1]
   const activeChList = channels.filter((c) => activeChannels.includes(c.id))
+  const [uptime, setUptime] = useState(0)
+
+  // Update uptime every second
+  useEffect(() => {
+    const iv = setInterval(() => setUptime(Date.now() - SESSION_START), 1000)
+    return () => clearInterval(iv)
+  }, [])
 
   // Compute stats for each active channel
   const stats = activeChList.map((ch) => {
@@ -24,6 +44,11 @@ export function StatusBar({ channels, activeChannels, history, paused, connected
     const max = values.length ? Math.max(...values) : null
     return { ch, cur, min, max }
   })
+
+  // Data rate: samples in last 5 seconds
+  const fiveSecAgo = Date.now() - 5000
+  const recentCount = history.filter((s) => s.ts_ms >= fiveSecAgo).length
+  const dataRate = (recentCount / 5).toFixed(1)
 
   return (
     <div
@@ -81,9 +106,23 @@ export function StatusBar({ channels, activeChannels, history, paused, connected
 
       <div style={{ flex: 1 }} />
 
+      {/* Data rate */}
+      <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: fs(8), color: '#222222' }}>
+        {dataRate} sps
+      </span>
+
+      <div style={{ width: 1, height: 12, background: '#161616' }} />
+
       {/* Sample count */}
       <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: fs(8), color: '#2a2a2a' }}>
         {history.length} samples
+      </span>
+
+      <div style={{ width: 1, height: 12, background: '#161616' }} />
+
+      {/* Session uptime */}
+      <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: fs(8), color: '#1e1e1e' }}>
+        {formatUptime(uptime)}
       </span>
     </div>
   )
