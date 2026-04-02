@@ -56,7 +56,7 @@ export function NavRail() {
         {navExpanded && (
           <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: fs(11), color: 'var(--cream)', whiteSpace: 'nowrap', letterSpacing: '0.05em' }}>
             FRAMEWORK<br />
-            <span style={{ color: 'var(--cream-dim)', fontSize: fs(9) }}>DECK v2.0</span>
+            <span style={{ color: 'var(--cream-dim)', fontSize: fs(9) }}>DECK v2.1</span>
           </div>
         )}
       </div>

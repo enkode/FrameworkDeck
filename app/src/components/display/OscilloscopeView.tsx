@@ -1,4 +1,4 @@
-import { useRef, useEffect, useCallback, useState } from 'react'
+import { useRef, useEffect, useCallback, useState, useMemo } from 'react'
 import { fs } from '../../utils/font'
 import type { TelemetrySample } from '../../api/types'
 import type { Channel } from '../../config/channels'
@@ -15,24 +15,47 @@ interface Props {
 interface HoverInfo {
   x: number
   y: number
+  canvasW: number
   values: { label: string; value: string; color: string }[]
   timeAgo: string
 }
 
+// Cache resolved CSS vars to avoid getComputedStyle every frame
+const cssVarCache = new Map<string, { value: string; ts: number }>()
+const CSS_CACHE_TTL = 2000 // refresh every 2s
+
 function resolveCssVar(varName: string): string {
-  return getComputedStyle(document.documentElement).getPropertyValue(varName).trim() || '#888888'
+  const now = Date.now()
+  const cached = cssVarCache.get(varName)
+  if (cached && now - cached.ts < CSS_CACHE_TTL) return cached.value
+  const value = getComputedStyle(document.documentElement).getPropertyValue(varName).trim() || '#888888'
+  cssVarCache.set(varName, { value, ts: now })
+  return value
+}
+
+// Invalidate cache on theme change
+export function invalidateColorCache() {
+  cssVarCache.clear()
 }
 
 const MIN_LANE_H = 90  // minimum pixels per channel lane before scrolling kicks in
 
 export function OscilloscopeView({ history, channels, activeChannels, timeWindow, paused }: Props) {
-  const { tempWarnC, useFahrenheit, yAutoScale } = useAppStore()
+  const { tempWarnC, useFahrenheit, yAutoScale, reducedMotion, theme } = useAppStore()
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const [hover, setHover] = useState<HoverInfo | null>(null)
   const [canvasHeight, setCanvasHeight] = useState(0)
+  const lastDrawnTsRef = useRef(0)
+  const rafRef = useRef<number>(0)
 
-  const activeChList = channels.filter((c) => activeChannels.includes(c.id))
+  // Invalidate color cache when theme changes
+  useEffect(() => { invalidateColorCache() }, [theme])
+
+  const activeChList = useMemo(
+    () => channels.filter((c) => activeChannels.includes(c.id)),
+    [channels, activeChannels]
+  )
 
   const cToF = (c: number) => c * 9 / 5 + 32
 
@@ -260,7 +283,7 @@ export function OscilloscopeView({ history, channels, activeChannels, timeWindow
     }
   }, [history, activeChList, timeWindow, paused, tempWarnC, useFahrenheit, yAutoScale])
 
-  // Resize + animation loop
+  // Resize + animation loop using requestAnimationFrame
   useEffect(() => {
     const canvas = canvasRef.current
     const container = containerRef.current
@@ -269,7 +292,6 @@ export function OscilloscopeView({ history, channels, activeChannels, timeWindow
     const resize = () => {
       const count = Math.max(activeChList.length, 1)
       const containerH = container.clientHeight
-      // Each lane gets at least MIN_LANE_H pixels; if fewer channels, they expand to fill
       const laneH = Math.max(MIN_LANE_H, containerH / count)
       const h = Math.ceil(laneH * count)
       canvas.width = container.clientWidth
@@ -282,12 +304,27 @@ export function OscilloscopeView({ history, channels, activeChannels, timeWindow
     ro.observe(container)
     resize()
 
-    const interval = setInterval(draw, 100)
+    // Use rAF loop that only redraws when data has changed or enough time passed
+    let running = true
+    const loop = () => {
+      if (!running) return
+      const lastTs = history.length > 0 ? history[history.length - 1].ts_ms : 0
+      const now = Date.now()
+      // Redraw if new data arrived or 200ms elapsed (for time cursor advancement)
+      if (lastTs !== lastDrawnTsRef.current || now - lastDrawnTsRef.current > 200) {
+        draw()
+        lastDrawnTsRef.current = lastTs || now
+      }
+      rafRef.current = requestAnimationFrame(loop)
+    }
+    rafRef.current = requestAnimationFrame(loop)
+
     return () => {
-      clearInterval(interval)
+      running = false
+      cancelAnimationFrame(rafRef.current)
       ro.disconnect()
     }
-  }, [draw])
+  }, [draw, activeChList.length, history])
 
   const handleMouseMove = useCallback(
     (e: React.MouseEvent<HTMLCanvasElement>) => {
@@ -334,14 +371,30 @@ export function OscilloscopeView({ history, channels, activeChannels, timeWindow
         return { label: ch.label, value: formatted, color: ch.color }
       })
 
-      setHover({ x: mouseX, y: mouseY, values, timeAgo })
+      setHover({ x: mouseX, y: mouseY, canvasW: canvas.width, values, timeAgo })
     },
     [history, activeChList, timeWindow, useFahrenheit]
   )
 
+  // Compute tooltip position — flip when near edges
+  const tooltipStyle = useMemo(() => {
+    if (!hover) return {}
+    const tooltipW = 160
+    const tooltipH = 24 + hover.values.length * 20
+    // Flip horizontally when near right edge
+    const left = hover.x + tooltipW + 20 > hover.canvasW
+      ? hover.x - tooltipW - 8
+      : hover.x + 12
+    // Clamp vertically
+    const top = Math.max(4, Math.min(hover.y, (canvasHeight || 400) - tooltipH - 8))
+    return { left, top }
+  }, [hover, canvasHeight])
+
   return (
     <div
       ref={containerRef}
+      role="img"
+      aria-label={`Oscilloscope displaying ${activeChList.map(c => c.label).join(', ')} over ${timeWindow} seconds`}
       style={{ width: '100%', height: '100%', position: 'relative', overflowY: 'auto' }}
     >
       <canvas
@@ -351,13 +404,13 @@ export function OscilloscopeView({ history, channels, activeChannels, timeWindow
         onMouseLeave={() => setHover(null)}
       />
 
-      {/* Hover tooltip */}
+      {/* Hover tooltip — flips when near edges */}
       {hover && (
         <div
           style={{
             position: 'absolute',
-            left: hover.x + 12,
-            top: Math.min(hover.y, (canvasHeight || 400) - 120),
+            left: tooltipStyle.left,
+            top: tooltipStyle.top,
             background: '#161616',
             border: '1px solid #2a2a2a',
             padding: '6px 10px',
@@ -378,19 +431,21 @@ export function OscilloscopeView({ history, channels, activeChannels, timeWindow
         </div>
       )}
 
-      {/* Scanlines overlay — height tracks canvas so it covers scrollable content */}
-      <div
-        style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          height: canvasHeight || '100%',
-          pointerEvents: 'none',
-          background: 'repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,0,0,0.06) 3px, rgba(0,0,0,0.06) 4px)',
-          zIndex: 5,
-        }}
-      />
+      {/* Scanlines overlay — respects reduced motion preference */}
+      {!reducedMotion && (
+        <div
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            height: canvasHeight || '100%',
+            pointerEvents: 'none',
+            background: 'repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,0,0,0.06) 3px, rgba(0,0,0,0.06) 4px)',
+            zIndex: 5,
+          }}
+        />
+      )}
     </div>
   )
 }

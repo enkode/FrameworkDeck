@@ -145,8 +145,13 @@ function OfflineScreen() {
       <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: fs(10), color: '#222222', letterSpacing: '0.3em', textTransform: 'uppercase' }}>
         NO SIGNAL
       </div>
-      <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: fs(9), color: '#1a1a1a', letterSpacing: '0.1em' }}>
-        Start framework-control service on port 8090
+      <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: fs(9), color: '#1a1a1a', letterSpacing: '0.1em', textAlign: 'center', lineHeight: 1.8 }}>
+        Waiting for framework-control service
+      </div>
+      <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: fs(8), color: '#151515', textAlign: 'center', lineHeight: 1.6, maxWidth: 360 }}>
+        Run <span style={{ color: '#1e1e1e' }}>framework_control</span> to start the telemetry backend.<br />
+        Default endpoint: <span style={{ color: '#1e1e1e' }}>http://127.0.0.1:8090</span><br />
+        Check Settings to change the API endpoint.
       </div>
     </div>
   )
