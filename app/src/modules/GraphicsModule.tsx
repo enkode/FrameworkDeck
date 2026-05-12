@@ -289,7 +289,7 @@ export function GraphicsModule() {
     setActionMsg('Running recovery… (UAC prompt will appear)')
     try {
       await recoverDgpu(instanceId)
-      setActionMsg('Recovery completed — refreshing state')
+      setActionMsg('Recovery completed. Refreshing state.')
       setTimeout(() => {
         refetchState()
         refetchSmi()
@@ -484,7 +484,7 @@ export function GraphicsModule() {
             </button>
           </div>
           <div style={{ padding: '0 14px 14px', ...mono, fontSize: fs(9), color: '#444444', lineHeight: 1.6 }}>
-            The Framework 16 MUX cannot be toggled programmatically — Adrenalin Settings → Graphics → AMD SmartAccess Graphics is the only path on Windows. These shortcuts open the right tools.
+            The Framework 16 MUX cannot be toggled programmatically. Adrenalin Settings, Graphics, AMD SmartAccess Graphics is the only path on Windows. These shortcuts open the right tools.
           </div>
         </Panel>
 

@@ -1,6 +1,6 @@
 // Graphics module commands.
 //
-// All commands are Windows-only — they wrap PowerShell invocations to query the
+// All commands are Windows-only. They wrap PowerShell invocations to query the
 // PnP tree, event log, and HKCU registry, and to launch external GPU control
 // panels. On non-Windows targets the commands return an "unsupported" error so
 // the frontend can hide the module gracefully and the build still succeeds for
@@ -14,7 +14,7 @@ mod win {
     use std::os::windows::process::CommandExt;
     use std::process::Command;
 
-    // CREATE_NO_WINDOW — prevents PowerShell from flashing a console window
+    // CREATE_NO_WINDOW prevents PowerShell from flashing a console window
     // for every IPC call.
     const CREATE_NO_WINDOW: u32 = 0x0800_0000;
 
