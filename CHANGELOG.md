@@ -8,6 +8,25 @@ Format: `[version] YYYY-MM-DD — description`
 
 ## Framework Deck
 
+### [2.2.0] 2026-05-12 — Graphics module, community fixes
+
+**New: Graphics module (Windows only):**
+- `GPU ADAPTERS` panel — every display-class PnP device with status, problem code, driver INF/version, PCIe link state, last-arrival timestamp; cross-vendor NVIDIA + AMD
+- `RECOVER (UAC)` — one-click `pnputil /remove-device` + `/scan-devices` cycle via elevated PowerShell for adapters in Code 43 or similar error states
+- `DIAGNOSTICS · DXGKRNL-ADMIN` panel — surfaces `Microsoft-Windows-DxgKrnl-Admin` event log entries (errors, warnings) so failures like `StartAdapter_AddAdapterFailed` are visible instead of guessed at
+- `PER-APP GPU PREFERENCES` — read/write `HKCU\SOFTWARE\Microsoft\DirectX\UserGpuPreferences` with AUTO / POWER SAVING / HIGH PERFORMANCE; AUTO-DISCOVER scans common install roots for known games
+- `QUICK ACTIONS` — deep-links to AMD Adrenalin (SmartAccess Graphics), NVIDIA Control Panel / NVIDIA App, Windows graphics settings (the GUI-only paths that actually flip the Framework 16 MUX)
+- `NVIDIA-SMI` raw output capture when the driver is healthy
+- All commands cfg-gated to Windows; non-Tauri runtime renders a graceful fallback
+
+**Community feedback fixes (Frame.work thread):**
+- **Firmware download links** — `tagno25-openrgb` URL was `/releases/tag/latest` which 404s (no tag literally named "latest"); fixed to `/releases/latest`. Updated `framework-official` URL to `/releases/latest` for the same auto-redirect behavior. Clarified which firmware options are pre-built vs build-from-source in both the catalog and the README firmware table.
+- **Linux Wayland EGL bug** — Framework Deck now auto-sets `WEBKIT_DISABLE_DMABUF_RENDERER=1` at process start on Linux to work around the webkit2gtk-4.1 + recent Mesa EGL_BAD_PARAMETER failure reported on KDE Wayland (CachyOS). No-op on X11; users can override.
+- **Framework 12 support** — added to the Hardware Support table with the realistic scope (telemetry / power / battery / Graphics work via `framework-control`; input-module features are N/A — FW12 has no detachable input modules).
+- **README TL;DR** — concise summary added at the top in response to feedback that the README was overwhelming.
+
+---
+
 ### [2.1.0] 2026-04-01 — Performance, LED Matrix, & Quality of Life
 
 **Oscilloscope rendering improvements:**
