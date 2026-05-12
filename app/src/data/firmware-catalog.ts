@@ -30,7 +30,7 @@ const KEYBOARD_BOOTLOADER: BootloaderMethod[] = [
             'Slide the touchpad module downward until the input deck powers off',
             'Hold Left Alt + Right Alt keys simultaneously',
             'While holding both Alt keys, slide the touchpad back up',
-            'Release the Alt keys — the keyboard is now in bootloader mode',
+            'Release the Alt keys. The keyboard is now in bootloader mode.',
             'A new "RPI-RP2" drive should appear in File Explorer',
         ],
     },
@@ -53,7 +53,7 @@ const MACROPAD_BOOTLOADER: BootloaderMethod[] = [
             'Slide the touchpad module downward until the input deck powers off',
             'Hold the top-left key (M1) on the macropad',
             'While holding, slide the touchpad back up',
-            'Release the key — the macropad is now in bootloader mode',
+            'Release the key. The macropad is now in bootloader mode.',
             'A new "RPI-RP2" drive should appear in File Explorer',
         ],
     },
@@ -73,10 +73,10 @@ export const FIRMWARE_CATALOG: FirmwareEntry[] = [
     {
         id: 'framework-official',
         name: 'Official Framework QMK',
-        description: 'Stock firmware from Framework. Global RGB effects (no per-key), full VIA support. Use this to revert to factory firmware. The Releases page lists per-layout .uf2 builds (ANSI, ISO, JIS, Copilot) — pick the one matching your keyboard.',
+        description: 'Stock firmware from Framework. Global RGB effects (no per-key), full VIA support. Use this to revert to factory firmware. The Releases page lists per-layout .uf2 builds (ANSI, ISO, JIS, Copilot); pick the one matching your keyboard.',
         author: 'Framework',
         sourceUrl: 'https://github.com/FrameworkComputer/qmk_firmware',
-        // Use /releases/latest — GitHub auto-redirects to the latest tagged release.
+        // Use /releases/latest so GitHub auto-redirects to the latest tagged release.
         downloadUrl: 'https://github.com/FrameworkComputer/qmk_firmware/releases/latest',
         targets: [
             { productId: 0x0012, deviceName: 'Framework 16 Keyboard (ANSI)', methods: KEYBOARD_BOOTLOADER },
@@ -100,12 +100,12 @@ export const FIRMWARE_CATALOG: FirmwareEntry[] = [
         ],
         features: ['per-key-rgb', 'openrgb', 'pre-built'],
         compatibility: 'none',
-        compatibilityNote: 'Replaces VIA — this app cannot remap keys or control RGB. Use OpenRGB desktop app instead.',
+        compatibilityNote: 'Replaces VIA. This app cannot remap keys or control RGB. Use the OpenRGB desktop app instead.',
     },
     {
         id: 'shandower81-cory',
         name: 'CORY Per-Key RGB Keymap',
-        description: 'Custom keymap with per-key per-layer static colors baked into the firmware. Colors are set at compile time, not controllable from host. No pre-built .uf2 — build from source.',
+        description: 'Custom keymap with per-key per-layer static colors baked into the firmware. Colors are set at compile time, not controllable from host. No pre-built .uf2; build from source.',
         author: 'Shandower81',
         sourceUrl: 'https://github.com/Shandower81/CORY-FRAMEWORK-RGB-KEYBOARD',
         downloadUrl: 'https://github.com/Shandower81/CORY-FRAMEWORK-RGB-KEYBOARD',
@@ -129,7 +129,7 @@ export const FIRMWARE_CATALOG: FirmwareEntry[] = [
         ],
         features: ['per-key-rgb', 'via-v3', 'rgb-remote', 'build-from-source'],
         compatibility: 'full',
-        compatibilityNote: 'Best option for this app — keeps VIA + adds per-key RGB control. Must compile with QMK toolchain.',
+        compatibilityNote: 'Best option for this app. Keeps VIA and adds per-key RGB control. Must compile with QMK toolchain.',
     },
 ];
 
