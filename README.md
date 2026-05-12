@@ -24,6 +24,23 @@
 
 ---
 
+## TL;DR
+
+**One app for everything your Framework laptop can show or do.**
+
+- **Live telemetry** — temps, fan RPM, power draw, battery health on a real-time oscilloscope
+- **Hardware control** — TDP, thermal limit, fan curves, charge limit
+- **Keyboard / Macropad** — full VIA remapping, per-key RGB, firmware flashing
+- **LED Matrix** — paint 306 LEDs, save patterns, animate
+- **Graphics** (Windows) — dGPU diagnostics, Code 43 recovery, per-app GPU prefs (D4, Battle.net, etc.)
+- **System info** — BIOS, EC firmware, hardware inventory
+
+Native Tauri app — under 10 MB, no Electron, runs offline. Works on Framework Laptop 13, 16, and 12 (with caveats — see [Hardware Support](#hardware-support)).
+
+**→ [Download latest release](https://github.com/enkode/FrameworkDeck/releases/latest)**
+
+---
+
 ## What is Framework Deck?
 
 Framework Deck is a unified desktop application for Framework laptop owners who want full visibility and control over their hardware. It combines real-time telemetry visualization with the complete keyboard and input module configuration toolset — everything in one window.
@@ -55,6 +72,22 @@ Built with Tauri 2 + React 19 + TypeScript + Tailwind CSS. Lightweight native wi
 - **AppImage** is the easiest option — make it executable and run. Works on any distro.
 - **WebHID** requires Chromium-based WebView. Most distros ship `webkit2gtk-4.1` which supports this. If the keyboard configurator can't connect, ensure `webkit2gtk-4.1` is installed.
 - **framework-control on Linux** uses `ectool` for hardware access. See the [framework-control Linux setup guide](https://github.com/ozturkkl/framework-control#linux).
+
+#### Wayland — `EGL_BAD_PARAMETER` or blank/beige window
+
+Framework Deck auto-sets `WEBKIT_DISABLE_DMABUF_RENDERER=1` on Linux so the webkit2gtk-4.1 DMA-BUF renderer doesn't try to negotiate EGL with recent Mesa — that combo is known to fail on KDE Wayland (e.g. CachyOS) and produce a beige or black window on launch.
+
+If the auto-workaround isn't enough, try one of these before relaunching:
+
+```bash
+# Disable compositing mode entirely (heavier workaround, also widely effective)
+WEBKIT_DISABLE_COMPOSITING_MODE=1 ./Framework_Deck_*.AppImage
+
+# Or run under X11 instead of Wayland
+GDK_BACKEND=x11 ./Framework_Deck_*.AppImage
+```
+
+If you find a different combination that works, please open an issue with your distro, DE, kernel, and Mesa version — we'll add it here.
 
 ---
 
@@ -123,6 +156,14 @@ Theme picker (4 themes), quick size presets, independent text/UI zoom sliders, u
 Click or drag to paint 306 individual LEDs on the Framework 16 display panel. Pattern presets: CLEAR, FILL, CHECKER, BORDER, CROSS, WAVE. Module slot inventory shows all installed hardware.
 
 ![LED Matrix](docs/screenshots/framework-deck_6VCaIARKHF.png)
+
+---
+
+### Graphics — dGPU diagnostics, recovery, per-app GPU prefs *(Windows only)*
+
+Consolidates everything Windows can do for GPU mode/state management into one panel. Built specifically because the Framework 16 MUX cannot be toggled programmatically — AMD SmartAccess Graphics and NVIDIA Advanced Optimus are GUI-only — so this gathers the things that *are* programmable into one place. Live PnP state for every display adapter, problem codes (Code 43, etc.), driver INF/version, PCIe link state, and a one-click `RECOVER (UAC)` button that runs `pnputil /remove-device` + `/scan-devices` for hung adapters. Surfaces `Microsoft-Windows-DxgKrnl-Admin` event log entries so you can see *why* an adapter failed to start instead of guessing. Read/write the per-app GPU preferences registry (the thing behind Settings → Display → Graphics) with auto-discovery for common games. Deep-links to AMD Adrenalin, NVIDIA Control Panel / NVIDIA App, and Windows graphics settings — the only paths that can actually flip the MUX on Windows.
+
+![Graphics Module](docs/screenshots/framework-deck_graphics-module.png)
 
 ---
 
@@ -221,6 +262,15 @@ Click or drag to paint 306 individual LEDs on the Framework 16 display panel. Pa
 - EC firmware build and image
 - Power state, capability matrix, TDP range, current TDP
 
+### Graphics *(Windows only)*
+- **GPU Adapters** — every display-class PnP device with problem code, driver version, INF, PCIe link state, last-arrival timestamp
+- **Recovery** — one-click `pnputil /remove-device` + `/scan-devices` cycle via elevated PowerShell (triggers UAC) for adapters stuck in Code 43 or similar error states
+- **Diagnostics** — `Microsoft-Windows-DxgKrnl-Admin` event log filtered to recent errors/warnings (catches `StartAdapter_AddAdapterFailed` and similar)
+- **Per-app GPU preferences** — read/write `HKCU\SOFTWARE\Microsoft\DirectX\UserGpuPreferences` (AUTO / POWER SAVING / HIGH PERFORMANCE) with auto-discovery for common games (Diablo IV, Battle.net, Steam, Cyberpunk, etc.)
+- **Quick actions** — deep-links to AMD Adrenalin (SmartAccess), NVIDIA Control Panel / NVIDIA App, and Windows graphics settings — the GUI paths that *can* actually toggle the MUX or NVCP per-app prefs
+- **NVIDIA-SMI** — raw output capture when the driver is healthy
+- Cross-vendor (NVIDIA + AMD), service status for `nvlddmkm` / `amdkmdag` shown in the header
+
 ### Settings
 - 4 color themes: **REEL** (Teenage Engineering, cream/red/blue), **PHOS** (phosphor green, Tektronix), **AMBR** (HP amber terminal), **FW** (Framework blue)
 - Quick size presets: S / M / L / XL / XXL
@@ -240,9 +290,12 @@ Click or drag to paint 306 individual LEDs on the Framework 16 display panel. Pa
 
 | Hardware | Sensors Available |
 |----------|------------------|
+| Framework Laptop 12 | CPU temp, fan RPM, power draw, battery — whatever `framework-control` exposes for the FW12 EC. Input-module features (keyboard configurator, LED Matrix) are N/A — the FW12 doesn't have detachable input modules. |
 | Framework Laptop 13 (AMD / Intel) | CPU temp, fan RPM, power draw |
 | Framework Laptop 16 (AMD Ryzen 7040) | APU, CPU-EC, DDR, EC, dGPU, GPU-AMB, GPU-VR, VRAM temps; dual fan RPM |
 | Framework Laptop 16 (AMD Ryzen AI 300) | Same as above |
+
+> **Framework 12** users: telemetry, power management, battery health, system info, and (on Windows) the Graphics module all work — gated only by what `framework-control` supports for the FW12 EC. If a sensor doesn't appear that you expect, open an issue; that's a `framework-control` mapping question more than an app question.
 
 ### Keyboard Configurator (WebHID)
 
@@ -257,10 +310,10 @@ Click or drag to paint 306 individual LEDs on the Framework 16 display panel. Pa
 
 | Firmware | Per-Key RGB | VIA | Source |
 |----------|-------------|-----|--------|
-| [Official Framework QMK](https://github.com/FrameworkComputer/qmk_firmware) | Global only | V3 | [FrameworkComputer/qmk_firmware](https://github.com/FrameworkComputer/qmk_firmware) |
-| [nucleardog rgb_remote](https://gitlab.com/nucleardog/qmk_firmware_fw16) | Yes — host-controlled | V3 | [nucleardog/qmk_firmware_fw16](https://gitlab.com/nucleardog/qmk_firmware_fw16) |
-| [tagno25 OpenRGB](https://github.com/tagno25/qmk_firmware) | Yes — via OpenRGB | No | [tagno25/qmk_firmware](https://github.com/tagno25/qmk_firmware) |
-| [Shandower81 CORY](https://github.com/Shandower81/CORY-FRAMEWORK-RGB-KEYBOARD) | Baked-in per-layer | Partial | [Shandower81/CORY-FRAMEWORK-RGB-KEYBOARD](https://github.com/Shandower81/CORY-FRAMEWORK-RGB-KEYBOARD) |
+| [Official Framework QMK](https://github.com/FrameworkComputer/qmk_firmware) | Global only | V3 | Pre-built `.uf2` — [latest release](https://github.com/FrameworkComputer/qmk_firmware/releases/latest) (pick ANSI / ISO / JIS / Copilot variant) |
+| [nucleardog rgb_remote](https://gitlab.com/nucleardog/qmk_firmware_fw16) | Yes — host-controlled | V3 | Build from source — Framework Deck's Firmware tab includes an automatic QMK build script |
+| [tagno25 OpenRGB](https://github.com/tagno25/qmk_firmware) | Yes — via OpenRGB | No | Pre-built `.uf2` — [latest release](https://github.com/tagno25/qmk_firmware/releases/latest) |
+| [Shandower81 CORY](https://github.com/Shandower81/CORY-FRAMEWORK-RGB-KEYBOARD) | Baked-in per-layer | Partial | Build from source — [repo](https://github.com/Shandower81/CORY-FRAMEWORK-RGB-KEYBOARD) |
 
 ### Flashing Safety
 

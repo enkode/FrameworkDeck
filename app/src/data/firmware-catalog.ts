@@ -73,25 +73,27 @@ export const FIRMWARE_CATALOG: FirmwareEntry[] = [
     {
         id: 'framework-official',
         name: 'Official Framework QMK',
-        description: 'Stock firmware from Framework. Global RGB effects (no per-key), full VIA support. Use this to revert to factory firmware.',
+        description: 'Stock firmware from Framework. Global RGB effects (no per-key), full VIA support. Use this to revert to factory firmware. The Releases page lists per-layout .uf2 builds (ANSI, ISO, JIS, Copilot) — pick the one matching your keyboard.',
         author: 'Framework',
         sourceUrl: 'https://github.com/FrameworkComputer/qmk_firmware',
-        downloadUrl: 'https://github.com/FrameworkComputer/qmk_firmware/releases',
+        // Use /releases/latest — GitHub auto-redirects to the latest tagged release.
+        downloadUrl: 'https://github.com/FrameworkComputer/qmk_firmware/releases/latest',
         targets: [
             { productId: 0x0012, deviceName: 'Framework 16 Keyboard (ANSI)', methods: KEYBOARD_BOOTLOADER },
             { productId: 0x0013, deviceName: 'Framework 16 RGB Macropad', methods: MACROPAD_BOOTLOADER },
         ],
-        features: ['via-v3', 'rgb-effects', 'official'],
+        features: ['via-v3', 'rgb-effects', 'official', 'pre-built'],
         compatibility: 'full',
         compatibilityNote: 'Fully compatible with this app (key mapping + global RGB).',
     },
     {
         id: 'tagno25-openrgb',
         name: 'OpenRGB Per-Key Firmware',
-        description: 'Replaces VIA with OpenRGB protocol for full per-key RGB control via OpenRGB desktop app. Actively maintained with pre-built .uf2 downloads.',
+        description: 'Replaces VIA with OpenRGB protocol for full per-key RGB control via the OpenRGB desktop app. Actively maintained with pre-built .uf2 downloads.',
         author: 'tagno25',
         sourceUrl: 'https://github.com/tagno25/qmk_firmware',
-        downloadUrl: 'https://github.com/tagno25/qmk_firmware/releases/tag/latest',
+        // Was /releases/tag/latest which 404s (no tag literally named "latest"). Use /releases/latest.
+        downloadUrl: 'https://github.com/tagno25/qmk_firmware/releases/latest',
         targets: [
             { productId: 0x0012, deviceName: 'Framework 16 Keyboard (ANSI)', methods: KEYBOARD_BOOTLOADER },
             { productId: 0x0013, deviceName: 'Framework 16 RGB Macropad', methods: MACROPAD_BOOTLOADER },
@@ -103,21 +105,21 @@ export const FIRMWARE_CATALOG: FirmwareEntry[] = [
     {
         id: 'shandower81-cory',
         name: 'CORY Per-Key RGB Keymap',
-        description: 'Custom keymap with per-key per-layer static colors baked into the firmware. Colors are set at compile time, not controllable from host.',
+        description: 'Custom keymap with per-key per-layer static colors baked into the firmware. Colors are set at compile time, not controllable from host. No pre-built .uf2 — build from source.',
         author: 'Shandower81',
         sourceUrl: 'https://github.com/Shandower81/CORY-FRAMEWORK-RGB-KEYBOARD',
         downloadUrl: 'https://github.com/Shandower81/CORY-FRAMEWORK-RGB-KEYBOARD',
         targets: [
             { productId: 0x0012, deviceName: 'Framework 16 Keyboard (ANSI)', methods: KEYBOARD_BOOTLOADER },
         ],
-        features: ['per-key-rgb', 'per-layer-colors', 'pre-built'],
+        features: ['per-key-rgb', 'per-layer-colors', 'build-from-source'],
         compatibility: 'partial',
         compatibilityNote: 'Per-key colors are baked in (not controllable from this app). Key mapping may still work via VIA.',
     },
     {
         id: 'nucleardog-perkey',
         name: 'Per-Key RGB (rgb_remote)',
-        description: 'Adds the rgb_remote protocol for host-controlled per-key RGB while keeping full VIA support. Requires compiling from source (no pre-built binaries).',
+        description: 'Adds the rgb_remote protocol for host-controlled per-key RGB while keeping full VIA support. Requires compiling from source (no pre-built binaries). The Firmware tab in this app provides an automatic build script that handles QMK setup and compilation.',
         author: 'nucleardog',
         sourceUrl: 'https://gitlab.com/nucleardog/qmk_firmware_fw16',
         downloadUrl: 'https://gitlab.com/nucleardog/qmk_firmware_fw16',
