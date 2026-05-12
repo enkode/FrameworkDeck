@@ -9,6 +9,7 @@ import { FanModule } from './modules/FanModule'
 import { SystemModule } from './modules/SystemModule'
 import { PowerModule } from './modules/PowerModule'
 import { BatteryModule } from './modules/BatteryModule'
+import { GraphicsModule } from './modules/GraphicsModule'
 import { InputModulesModule } from './modules/InputModulesModule'
 
 function AppInner() {
@@ -40,6 +41,8 @@ function AppInner() {
         return <PowerModule />
       case 'battery':
         return <BatteryModule />
+      case 'graphics':
+        return <GraphicsModule />
       case 'input-modules':
         return <InputModulesModule />
       case 'system':
