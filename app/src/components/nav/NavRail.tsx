@@ -3,11 +3,11 @@ import { useAppStore } from '../../store/app'
 import { MODULES } from '../../types/navigation'
 import type { ModuleId } from '../../types/navigation'
 import {
-  Activity, Keyboard, Fan, Zap, BatteryFull, LayoutGrid, Cpu, Settings
+  Activity, Keyboard, Fan, Zap, BatteryFull, LayoutGrid, Cpu, Settings, MonitorCog
 } from 'lucide-react'
 
 const ICON_MAP: Record<string, React.ComponentType<{ size?: number; strokeWidth?: number }>> = {
-  Activity, Keyboard, Fan, Zap, BatteryFull, LayoutGrid, Cpu, Settings,
+  Activity, Keyboard, Fan, Zap, BatteryFull, LayoutGrid, Cpu, Settings, MonitorCog,
 }
 
 export function NavRail() {

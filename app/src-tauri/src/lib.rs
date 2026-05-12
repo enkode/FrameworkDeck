@@ -5,6 +5,8 @@
 // The token is read from the same env var the service uses, falling back to the
 // known install default.
 
+mod graphics;
+
 const SERVICE_BASE: &str = "http://127.0.0.1:30912";
 const DEFAULT_TOKEN: &str = "4c07a4f2-0e64-4c43-bcb0-093cd55a55b6";
 
@@ -64,7 +66,21 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_log::Builder::new().build())
         .plugin(tauri_plugin_store::Builder::new().build())
-        .invoke_handler(tauri::generate_handler![api_get, api_post])
+        .invoke_handler(tauri::generate_handler![
+            api_get,
+            api_post,
+            graphics::get_graphics_state,
+            graphics::get_dxgkrnl_events,
+            graphics::get_gpu_preferences,
+            graphics::set_gpu_preference,
+            graphics::remove_gpu_preference,
+            graphics::find_known_exes,
+            graphics::open_amd_adrenalin,
+            graphics::open_nvidia_control_panel,
+            graphics::open_windows_graphics_settings,
+            graphics::recover_dgpu,
+            graphics::run_nvidia_smi,
+        ])
         .run(tauri::generate_context!())
         .expect("error while running Framework Deck");
 }
