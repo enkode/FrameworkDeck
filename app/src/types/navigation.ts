@@ -4,6 +4,7 @@ export type ModuleId =
   | 'fan'
   | 'power'
   | 'battery'
+  | 'graphics'
   | 'input-modules'
   | 'system'
   | 'settings'
@@ -22,6 +23,7 @@ export const MODULES: ModuleDefinition[] = [
   { id: 'fan',           label: 'Fan Control',    icon: 'Fan',          shortLabel: 'FAN',  category: 'hardware' },
   { id: 'power',         label: 'Power',          icon: 'Zap',          shortLabel: 'PWR',  category: 'hardware' },
   { id: 'battery',       label: 'Battery',        icon: 'BatteryFull',  shortLabel: 'BAT',  category: 'hardware' },
+  { id: 'graphics',      label: 'Graphics',       icon: 'MonitorCog',   shortLabel: 'GPU',  category: 'hardware' },
   { id: 'input-modules', label: 'Input Modules',  icon: 'LayoutGrid',   shortLabel: 'MOD',  category: 'hardware' },
   { id: 'system',        label: 'System',         icon: 'Cpu',          shortLabel: 'SYS',  category: 'config' },
   { id: 'settings',      label: 'Settings',       icon: 'Settings',     shortLabel: 'CFG',  category: 'config' },

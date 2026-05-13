@@ -1,14 +1,14 @@
 ## What's New
 
-<!-- Filled in at release time -->
+See the [CHANGELOG](https://github.com/enkode/FrameworkDeck/blob/main/CHANGELOG.md) for the full list of changes in this release.
 
 ## Download
 
 | Platform | Installer | Notes |
 |----------|-----------|-------|
-| **Windows 11/10** (64-bit) | `Framework.Deck_x.x.x_x64-setup.exe` | Recommended — NSIS installer |
+| **Windows 11/10** (64-bit) | `Framework.Deck_x.x.x_x64-setup.exe` | Recommended NSIS installer |
 | **Windows 11/10** (64-bit) | `Framework.Deck_x.x.x_x64_en-US.msi` | MSI for enterprise/managed deployments |
-| **Linux** (64-bit) | `framework-deck_x.x.x_amd64.AppImage` | Universal — runs on any distro, no install needed |
+| **Linux** (64-bit) | `framework-deck_x.x.x_amd64.AppImage` | Universal AppImage, runs on any distro, no install needed |
 | **Debian / Ubuntu** | `framework-deck_x.x.x_amd64.deb` | Native .deb package (`sudo dpkg -i`) |
 | **Fedora / RHEL** | `framework-deck-x.x.x-1.x86_64.rpm` | Native .rpm package (`sudo rpm -i`) |
 
@@ -22,7 +22,7 @@
 
 ## Upgrading
 
-Install over the previous version — your settings and saved configs are preserved.
+Install over the previous version; your settings and saved configs are preserved.
 
 ## Full Changelog
 
