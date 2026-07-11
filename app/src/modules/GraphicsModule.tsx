@@ -232,7 +232,7 @@ export function GraphicsModule() {
 
   // Defensive: if the IPC layer ever drifts and returns a non-array (PowerShell
   // single-item unwrap, etc.) we don't want it to crash render.
-  const eventsArr = Array.isArray(events) ? events : []
+  const eventsArr = useMemo(() => (Array.isArray(events) ? events : []), [events])
   const prefsArr = Array.isArray(prefs) ? prefs : []
   const devicesArr = Array.isArray(state?.devices) ? state!.devices : []
 

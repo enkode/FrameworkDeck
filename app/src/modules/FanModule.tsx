@@ -25,6 +25,9 @@ const PRESETS: Record<string, { label: string; points: [number, number][] }> = {
 
 // ── Fan Curve Canvas ─────────────────────────────────────────
 
+// Plot padding: temp axis labels on the left, temp ticks below
+const pad = { l: 44, r: 16, t: 16, b: 32 }
+
 interface CurveEditorProps {
   points: [number, number][]
   onPointsChange: (pts: [number, number][]) => void
@@ -41,7 +44,6 @@ function FanCurveEditor({ points, onPointsChange, currentTemp, currentDuty, hyst
   const [size, setSize] = useState({ w: 500, h: 300 })
 
   // Coordinate system: temp 0-110°C on X, duty 0-100% on Y
-  const pad = { l: 44, r: 16, t: 16, b: 32 }
   const plotW = size.w - pad.l - pad.r
   const plotH = size.h - pad.t - pad.b
 
@@ -104,7 +106,8 @@ function FanCurveEditor({ points, onPointsChange, currentTemp, currentDuty, hyst
       sorted.forEach((p, i) => {
         const x = tempToX(p[0] - hysteresisC)
         const y = dutyToY(p[1])
-        i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y)
+        if (i === 0) ctx.moveTo(x, y)
+        else ctx.lineTo(x, y)
       })
       sorted.slice().reverse().forEach((p) => {
         ctx.lineTo(tempToX(p[0]), dutyToY(p[1]))
@@ -122,7 +125,8 @@ function FanCurveEditor({ points, onPointsChange, currentTemp, currentDuty, hyst
     sorted.forEach((p, i) => {
       const x = tempToX(p[0])
       const y = dutyToY(p[1])
-      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y)
+      if (i === 0) ctx.moveTo(x, y)
+      else ctx.lineTo(x, y)
     })
     ctx.stroke()
 
@@ -298,12 +302,14 @@ export function FanModule() {
   )
   const [curveModified, setCurveModified] = useState(false)
 
-  // Sync from server when config arrives
-  useEffect(() => {
+  // Sync from server when config arrives (render-time adjustment, per React docs)
+  const [prevServerPoints, setPrevServerPoints] = useState(serverCurvePoints)
+  if (serverCurvePoints !== prevServerPoints) {
+    setPrevServerPoints(serverCurvePoints)
     if (serverCurvePoints && !curveModified) {
       setLocalCurvePoints(serverCurvePoints)
     }
-  }, [serverCurvePoints, curveModified])
+  }
 
   const [hysteresisC, setHysteresisC] = useState(fanConfig?.curve?.hysteresis_c ?? 3)
   const [rateLimitPct, setRateLimitPct] = useState(fanConfig?.curve?.rate_limit_pct_per_step ?? 5)

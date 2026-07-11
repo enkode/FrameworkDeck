@@ -34,7 +34,10 @@ export async function apiFetch<T>(path: string, options?: RequestInit): Promise<
       return JSON.parse(result) as T
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err)
-      throw new Error(`API ${path}: ${msg.includes('Connection') ? 'Service unreachable — is framework-control running?' : msg}`)
+      // 'SERVICE_UNREACHABLE' is the structured marker from the Rust side;
+      // 'Connection' keeps compatibility with older backends' raw reqwest text.
+      const unreachable = msg.includes('SERVICE_UNREACHABLE') || msg.includes('Connection')
+      throw new Error(`API ${path}: ${unreachable ? 'Service unreachable — is framework-control running?' : msg}`)
     }
   }
 

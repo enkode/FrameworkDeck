@@ -61,7 +61,21 @@ export class HIDService {
     private commandQueue: Promise<DataView | null> = Promise.resolve(null);
     private _reconnecting: boolean = false;
 
+    /**
+     * WebHID is only implemented in Chromium engines (Windows WebView2, Chrome,
+     * Edge). Linux webkit2gtk has no navigator.hid — every entry point must be
+     * guarded or the whole bundle throws during module evaluation.
+     */
+    static get isSupported(): boolean {
+        return typeof navigator !== 'undefined' && 'hid' in navigator;
+    }
+
+    get isSupported(): boolean {
+        return HIDService.isSupported;
+    }
+
     constructor() {
+        if (!HIDService.isSupported) return;
         // Auto-reconnect when a supported device appears (e.g. after sleep/wake)
         navigator.hid.addEventListener('connect', async (e: HIDConnectionEvent) => {
             const d = e.device;
@@ -87,6 +101,10 @@ export class HIDService {
 
     /** Show the browser device picker and connect to the selected device */
     async requestDevice(): Promise<boolean> {
+        if (!HIDService.isSupported) {
+            log.errorHid('WebHID is not available in this WebView');
+            return false;
+        }
         try {
             const devices = await navigator.hid.requestDevice({
                 filters: SUPPORTED_VIDS.map(vid => ({
@@ -126,6 +144,7 @@ export class HIDService {
 
     /** Get all previously-permitted devices matching our filters */
     async getPermittedDevices(): Promise<HIDDevice[]> {
+        if (!HIDService.isSupported) return [];
         const granted = await navigator.hid.getDevices();
         return granted.filter(d =>
             SUPPORTED_VIDS.includes(d.vendorId) &&

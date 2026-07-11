@@ -8,6 +8,49 @@ Format: `[version] YYYY-MM-DD — description`
 
 ## Framework Deck
 
+### [2.3.0] 2026-07-10: Linux production release, Updates module
+
+**New: Updates module (Windows + Linux):**
+- Detects your exact Framework device (DMI on Linux, WMI on Windows) and installed BIOS version
+- Checks Framework's Knowledge Base for the latest vetted BIOS and Driver Bundle for that specific device generation, with release dates and direct download links
+- Automatic daily check on launch with a notification badge on the nav rail when a newer BIOS ships
+- Installed-vs-latest comparison: installed BIOS vs latest vetted BIOS side by side
+- Windows: full installed driver inventory (device, version, date, provider, class) for hardware-relevant driver classes
+- Linux: kernel version plus fwupd firmware inventory, with LVFS (`fwupdmgr`) guidance — the vetted BIOS channel on Linux
+
+**Linux: app now actually works (it previously could not start):**
+- Fixed app-killing crash: `navigator.hid` was accessed unguarded at module load; webkit2gtk has no WebHID, so every Linux launch white-screened before React mounted
+- Keyboard module now shows a guided fallback on Linux (VIA web configurator + udev rule instructions) instead of a dead Connect button
+- Graphics module (Windows-only) is hidden from the nav on Linux instead of rendering raw errors; a persisted Graphics tab from a Windows session falls back to Dashboard
+- Real OS detection via a new `get_platform` command; all platform-specific UI now branches on it
+- External links (release pages, git-scm, source repos) now open in the system browser via the opener plugin — Tauri drops `target="_blank"` on Linux
+- Firmware build script is now platform-aware: Linux/macOS get a bash script (QMK CLI in a local venv, `lsusb` device detection); Windows keeps the PowerShell/QMK MSYS flow
+- Build script delivery uses a native save-to-Downloads command — webkit2gtk silently ignores blob downloads
+- `.deb` no longer depends on `libappindicator3-1` (removed from Debian 12+/Ubuntu 23.04+ — the package was uninstallable there); rpm deps trimmed to webkit2gtk4.1 + gtk3
+- Linux binary is now `framework-deck` (`mainBinaryName`) instead of a name with a space
+- Bundle metadata added: category, descriptions, homepage — the app now lands in the right desktop menu category
+- reqwest switched to rustls — no more dynamic OpenSSL linkage breaking the AppImage on distros with mismatched libssl
+
+**Fixed on all platforms:**
+- Settings persistence and file logging were silently dead: the code checked `__TAURI__` (a Tauri v1 marker) instead of `__TAURI_INTERNALS__`, and the store/log plugin permissions were missing from the capability file. Both fixed; settings now persist to `config.json` as designed
+- Wrong service port shown to users: UI said 127.0.0.1:8090; the real framework-control port is 30912 (persisted settings migrate automatically)
+- Fonts (JetBrains Mono, Inter) are now bundled with the app instead of loaded from Google Fonts — works fully offline, no CDN call on every launch
+- Content-Security-Policy tightened: removed `http://127.0.0.1:*` connect-src and Google Fonts hosts
+- Hardened PowerShell command construction in the Graphics module (GPU preference and elevated dGPU recovery paths) against script injection
+- Auto-discover for per-app GPU preferences now enumerates Steam libraries from the registry and all fixed drives instead of hardcoded developer paths
+- HTTP client is now pooled instead of re-created for every telemetry poll
+- Structured service-unreachable errors instead of matching on locale-dependent reqwest text
+- `FRAMEWORK_CONTROL_URL` env var can now override the service base URL (matches the existing token override)
+- Missing favicon added; ESLint violations fixed (impure render in StatusBar, setState-in-effect in FanModule, unused expressions)
+
+**Tooling:**
+- New CI workflow: lint + typecheck + clippy + full Linux Tauri build on every push/PR (previously nothing ran until a release tag)
+- `.gitattributes` added (LF normalization, CRLF for Windows scripts, binary patterns) — ends Windows/Linux line-ending churn
+- Release workflow cleaned: dead updater-signing env removed, submodule checkout dropped (not needed for builds)
+- README/release template corrected: WebHID does not exist in webkit2gtk (Linux keyboard-configurator claims fixed), `apt install ./…` and `dnf install ./…` instead of raw `dpkg`/`rpm`, build deps list fixed (conflicting/removed appindicator packages dropped)
+
+---
+
 ### [2.2.0] 2026-05-12: Graphics module, community fixes
 
 **New: Graphics module (Windows only):**

@@ -11,9 +11,35 @@ import { PowerModule } from './modules/PowerModule'
 import { BatteryModule } from './modules/BatteryModule'
 import { GraphicsModule } from './modules/GraphicsModule'
 import { InputModulesModule } from './modules/InputModulesModule'
+import { UpdatesModule } from './modules/UpdatesModule'
+import { usePlatform } from './hooks/usePlatform'
+import { autoCheck } from './services/UpdatesService'
+import { openExternal } from './utils/openExternal'
 
 function AppInner() {
-  const { theme, activeModule, reducedMotion, highContrast, fontScale, uiScale } = useAppStore()
+  const { theme, activeModule, reducedMotion, highContrast, fontScale, uiScale, setUpdateAvailable } = useAppStore()
+  const platform = usePlatform()
+
+  // Throttled (24h) launch-time check for new Framework BIOS/driver releases
+  useEffect(() => {
+    autoCheck().then((s) => {
+      if (s && s.biosUpdateAvailable !== null) setUpdateAvailable(s.biosUpdateAvailable)
+    }).catch(() => { /* offline or KB unreachable — badge just stays off */ })
+  }, [setUpdateAvailable])
+
+  // Tauri (wry) drops target="_blank" window requests — especially on Linux
+  // webkit2gtk. Intercept every external anchor click once, globally, and
+  // route it through the opener plugin so links open in the system browser.
+  useEffect(() => {
+    const onClick = (e: MouseEvent) => {
+      const anchor = (e.target as HTMLElement).closest?.('a[href^="http"]')
+      if (!anchor) return
+      e.preventDefault()
+      openExternal((anchor as HTMLAnchorElement).href)
+    }
+    document.addEventListener('click', onClick)
+    return () => document.removeEventListener('click', onClick)
+  }, [])
 
   // Apply theme + accessibility attributes on mount and change
   useEffect(() => {
@@ -42,9 +68,13 @@ function AppInner() {
       case 'battery':
         return <BatteryModule />
       case 'graphics':
-        return <GraphicsModule />
+        // Windows-only module; a persisted activeModule from a Windows session
+        // must not strand a Linux user on a broken tab.
+        return platform === 'windows' ? <GraphicsModule /> : <DashboardModule />
       case 'input-modules':
         return <InputModulesModule />
+      case 'updates':
+        return <UpdatesModule />
       case 'system':
         return <SystemModule />
       case 'settings':

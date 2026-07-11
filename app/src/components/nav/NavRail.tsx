@@ -1,21 +1,24 @@
 import { fs } from '../../utils/font'
 import { useAppStore } from '../../store/app'
-import { MODULES } from '../../types/navigation'
+import { MODULES, modulesForPlatform } from '../../types/navigation'
 import type { ModuleId } from '../../types/navigation'
+import { usePlatform } from '../../hooks/usePlatform'
 import {
-  Activity, Keyboard, Fan, Zap, BatteryFull, LayoutGrid, Cpu, Settings, MonitorCog
+  Activity, Keyboard, Fan, Zap, BatteryFull, LayoutGrid, Cpu, Settings, MonitorCog, RefreshCw
 } from 'lucide-react'
 
 const ICON_MAP: Record<string, React.ComponentType<{ size?: number; strokeWidth?: number }>> = {
-  Activity, Keyboard, Fan, Zap, BatteryFull, LayoutGrid, Cpu, Settings, MonitorCog,
+  Activity, Keyboard, Fan, Zap, BatteryFull, LayoutGrid, Cpu, Settings, MonitorCog, RefreshCw,
 }
 
 export function NavRail() {
-  const { activeModule, setActiveModule, navExpanded, setNavExpanded, connected } = useAppStore()
+  const { activeModule, setActiveModule, navExpanded, setNavExpanded, connected, updateAvailable } = useAppStore()
+  const platform = usePlatform()
 
-  const monitorModules = MODULES.filter((m) => m.category === 'monitor')
-  const hardwareModules = MODULES.filter((m) => m.category === 'hardware')
-  const configModules = MODULES.filter((m) => m.category === 'config')
+  const available = modulesForPlatform(platform)
+  const monitorModules = available.filter((m) => m.category === 'monitor')
+  const hardwareModules = available.filter((m) => m.category === 'hardware')
+  const configModules = available.filter((m) => m.category === 'config')
 
   return (
     <nav
@@ -56,7 +59,7 @@ export function NavRail() {
         {navExpanded && (
           <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: fs(11), color: 'var(--cream)', whiteSpace: 'nowrap', letterSpacing: '0.05em' }}>
             FRAMEWORK<br />
-            <span style={{ color: 'var(--cream-dim)', fontSize: fs(9) }}>DECK v2.2</span>
+            <span style={{ color: 'var(--cream-dim)', fontSize: fs(9) }}>DECK v2.3</span>
           </div>
         )}
       </div>
@@ -81,32 +84,34 @@ export function NavRail() {
 
       {/* Module groups */}
       <div style={{ flex: 1, overflowY: 'auto', padding: '4px 0' }}>
-        <NavGroup modules={monitorModules} activeModule={activeModule} onSelect={setActiveModule} expanded={navExpanded} />
+        <NavGroup modules={monitorModules} activeModule={activeModule} onSelect={setActiveModule} expanded={navExpanded} badgeFor={updateAvailable ? 'updates' : null} />
         <div style={{ height: 1, background: 'var(--border)', margin: '4px 8px' }} />
-        <NavGroup modules={hardwareModules} activeModule={activeModule} onSelect={setActiveModule} expanded={navExpanded} />
+        <NavGroup modules={hardwareModules} activeModule={activeModule} onSelect={setActiveModule} expanded={navExpanded} badgeFor={updateAvailable ? 'updates' : null} />
         <div style={{ height: 1, background: 'var(--border)', margin: '4px 8px' }} />
-        <NavGroup modules={configModules} activeModule={activeModule} onSelect={setActiveModule} expanded={navExpanded} />
+        <NavGroup modules={configModules} activeModule={activeModule} onSelect={setActiveModule} expanded={navExpanded} badgeFor={updateAvailable ? 'updates' : null} />
       </div>
     </nav>
   )
 }
 
-function NavGroup({ modules, activeModule, onSelect, expanded }: {
+function NavGroup({ modules, activeModule, onSelect, expanded, badgeFor }: {
   modules: typeof MODULES
   activeModule: ModuleId
   onSelect: (id: ModuleId) => void
   expanded: boolean
+  badgeFor?: ModuleId | null
 }) {
   return (
     <>
       {modules.map((mod) => {
         const Icon = ICON_MAP[mod.icon]
         const isActive = activeModule === mod.id
+        const hasBadge = badgeFor === mod.id
         return (
           <button
             key={mod.id}
             onClick={() => onSelect(mod.id)}
-            title={mod.label}
+            title={hasBadge ? `${mod.label} — update available` : mod.label}
             style={{
               display: 'flex',
               alignItems: 'center',
@@ -123,11 +128,21 @@ function NavGroup({ modules, activeModule, onSelect, expanded }: {
               textAlign: 'left',
               borderLeft: isActive ? '2px solid var(--tan)' : '2px solid transparent',
               transition: 'background 100ms, color 100ms',
+              position: 'relative',
             }}
             onMouseOver={(e) => { if (!isActive) e.currentTarget.style.background = 'var(--bg-panel-2)' }}
             onMouseOut={(e) => { if (!isActive) e.currentTarget.style.background = 'transparent' }}
           >
-            {Icon && <Icon size={18} strokeWidth={isActive ? 2 : 1.5} />}
+            <span style={{ position: 'relative', display: 'inline-flex' }}>
+              {Icon && <Icon size={18} strokeWidth={isActive ? 2 : 1.5} />}
+              {hasBadge && (
+                <span style={{
+                  position: 'absolute', top: -2, right: -3,
+                  width: 7, height: 7, borderRadius: '50%',
+                  background: 'var(--tan)', boxShadow: '0 0 5px var(--tan)',
+                }} />
+              )}
+            </span>
             {expanded && <span style={{ whiteSpace: 'nowrap' }}>{mod.label}</span>}
           </button>
         )

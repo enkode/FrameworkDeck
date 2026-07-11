@@ -319,7 +319,9 @@ export function SettingsModule() {
                 }}
               />
               <div style={{ ...mono, fontSize: fs(8), color: '#2a2a2a', marginTop: 6 }}>
-                framework-control REST API base URL
+                framework-control base URL for browser dev only. The desktop app
+                talks to 127.0.0.1:30912 via Rust — override with the
+                FRAMEWORK_CONTROL_URL environment variable instead.
               </div>
             </SettingRow>
           </div>

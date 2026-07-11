@@ -149,9 +149,9 @@ function OfflineScreen() {
         Waiting for framework-control service
       </div>
       <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: fs(8), color: '#151515', textAlign: 'center', lineHeight: 1.6, maxWidth: 360 }}>
-        Run <span style={{ color: '#1e1e1e' }}>framework_control</span> to start the telemetry backend.<br />
-        Default endpoint: <span style={{ color: '#1e1e1e' }}>http://127.0.0.1:8090</span><br />
-        Check Settings to change the API endpoint.
+        Install and start the <span style={{ color: '#1e1e1e' }}>framework-control</span> service to enable telemetry.<br />
+        Default endpoint: <span style={{ color: '#1e1e1e' }}>http://127.0.0.1:30912</span><br />
+        Set FRAMEWORK_CONTROL_URL / FRAMEWORK_CONTROL_TOKEN to override.
       </div>
     </div>
   )

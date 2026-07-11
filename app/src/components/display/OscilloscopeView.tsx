@@ -34,7 +34,7 @@ function resolveCssVar(varName: string): string {
 }
 
 // Invalidate cache on theme change
-export function invalidateColorCache() {
+function invalidateColorCache() {
   cssVarCache.clear()
 }
 

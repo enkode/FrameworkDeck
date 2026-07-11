@@ -45,9 +45,9 @@ export function StatusBar({ channels, activeChannels, history, paused, connected
     return { ch, cur, min, max }
   })
 
-  // Data rate: samples in last 5 seconds
-  const fiveSecAgo = Date.now() - 5000
-  const recentCount = history.filter((s) => s.ts_ms >= fiveSecAgo).length
+  // Data rate: samples in the 5 seconds up to the newest sample (pure w.r.t. props)
+  const newestTs = lastSample?.ts_ms ?? 0
+  const recentCount = history.filter((s) => s.ts_ms >= newestTs - 5000).length
   const dataRate = (recentCount / 5).toFixed(1)
 
   return (

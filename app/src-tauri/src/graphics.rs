@@ -10,7 +10,7 @@
 // ConvertTo-Json so the Rust side just forwards the stdout to the WebView.
 
 #[cfg(target_os = "windows")]
-mod win {
+pub(crate) mod win {
     use std::os::windows::process::CommandExt;
     use std::process::Command;
 
@@ -179,12 +179,29 @@ ConvertTo-Json -InputObject @($result) -Depth 3 -Compress
     }
 }
 
+/// A Windows exe path is interpolated into a PowerShell here-string; a value
+/// containing a newline followed by '@ would break out of it and execute
+/// arbitrary script. Real paths never contain control characters, so reject
+/// them outright.
+#[cfg(target_os = "windows")]
+fn validate_exe_path(exe: &str) -> Result<(), String> {
+    if exe.is_empty() || exe.len() > 512 {
+        return Err("invalid exe path".to_string());
+    }
+    if exe.chars().any(|c| c.is_control()) {
+        return Err("exe path contains control characters".to_string());
+    }
+    Ok(())
+}
+
 /// Write a single per-app GPU preference. preference: 0=Auto, 1=Power saving, 2=High performance.
 #[tauri::command]
 pub fn set_gpu_preference(exe: String, preference: u32) -> Result<String, String> {
     if !(0..=2).contains(&preference) {
         return Err("preference must be 0, 1, or 2".to_string());
     }
+    #[cfg(target_os = "windows")]
+    validate_exe_path(&exe)?;
     #[cfg(target_os = "windows")]
     {
         let script = format!(
@@ -215,6 +232,7 @@ New-ItemProperty -Path $path -Name $exe -Value $value -PropertyType String -Forc
 pub fn remove_gpu_preference(exe: String) -> Result<String, String> {
     #[cfg(target_os = "windows")]
     {
+        validate_exe_path(&exe)?;
         let script = format!(
             r#"
 $path = 'HKCU:\SOFTWARE\Microsoft\DirectX\UserGpuPreferences'
@@ -267,14 +285,30 @@ $candidates = @(
     'ollama.exe',
     'ollama app.exe'
 )
-$roots = @(
-    'C:\Program Files',
-    'C:\Program Files (x86)',
-    "$env:LOCALAPPDATA\Programs",
-    'D:\',
-    'D:\Games',
-    'D:\SteamLibrary\steamapps\common'
-) | Where-Object { Test-Path $_ }
+$roots = [System.Collections.Generic.List[string]]::new()
+$roots.Add("$env:ProgramFiles")
+$roots.Add("${env:ProgramFiles(x86)}")
+$roots.Add("$env:LOCALAPPDATA\Programs")
+# Steam library folders from the registry (covers libraries on any drive)
+try {
+    $steamPath = (Get-ItemProperty 'HKCU:\Software\Valve\Steam' -ErrorAction Stop).SteamPath
+    if ($steamPath) {
+        $vdf = Join-Path $steamPath 'steamapps\libraryfolders.vdf'
+        if (Test-Path $vdf) {
+            Select-String -Path $vdf -Pattern '"path"\s+"([^"]+)"' -AllMatches |
+                ForEach-Object { $_.Matches } |
+                ForEach-Object {
+                    $lib = $_.Groups[1].Value -replace '\\\\', '\'
+                    $roots.Add((Join-Path $lib 'steamapps\common'))
+                }
+        }
+    }
+} catch {}
+# Common game dirs on every fixed drive
+foreach ($d in (Get-PSDrive -PSProvider FileSystem -ErrorAction SilentlyContinue)) {
+    $roots.Add("$($d.Root)Games")
+}
+$roots = $roots | Where-Object { $_ -and (Test-Path $_) } | Select-Object -Unique
 $found = @{}
 foreach ($r in $roots) {
     foreach ($exe in $candidates) {
@@ -382,7 +416,17 @@ pub fn recover_dgpu(instance_id: String) -> Result<String, String> {
     }
     #[cfg(target_os = "windows")]
     {
-        let safe_id = instance_id.replace('\'', "''");
+        // PnP instance IDs are strictly [A-Za-z0-9\&_.#{}-] with no whitespace.
+        // This script runs ELEVATED (-Verb RunAs), so reject anything else —
+        // quote-escaping alone does not prevent here-string breakout.
+        if instance_id.len() > 256
+            || !instance_id.chars().all(|c| {
+                c.is_ascii_alphanumeric() || matches!(c, '\\' | '&' | '_' | '.' | '#' | '{' | '}' | '-')
+            })
+        {
+            return Err("invalid device instance id".to_string());
+        }
+        let safe_id = instance_id;
         let script = format!(
             r#"
 $inner = @'

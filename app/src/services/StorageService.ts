@@ -41,7 +41,10 @@ async function initStore(): Promise<void> {
     if (storeInitPromise) { await storeInitPromise; return; }
 
     storeInitPromise = (async () => {
-        if (!('__TAURI__' in window)) { storeReady = true; return; }
+        // Tauri v2 injects __TAURI_INTERNALS__ (not __TAURI__, which requires
+        // the withGlobalTauri option) — checking the wrong marker left the
+        // store dead and silently fell back to localStorage on all platforms.
+        if (!('__TAURI_INTERNALS__' in window)) { storeReady = true; return; }
         try {
             const { load } = await import('@tauri-apps/plugin-store');
             tauriStore = await load('config.json', { autoSave: false, defaults: {} });

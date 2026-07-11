@@ -1,7 +1,8 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "Framework Deck",
-  "version": "2.2.0",
+  "mainBinaryName": "framework-deck",
+  "version": "2.3.0",
   "identifier": "io.github.enkode.frameworkdeck",
   "build": {
     "beforeDevCommand": "npm run dev",
@@ -22,12 +23,16 @@
       }
     ],
     "security": {
-      "csp": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src ipc: http://ipc.localhost http://127.0.0.1:* https://fonts.googleapis.com https://fonts.gstatic.com; img-src 'self' data: blob:"
+      "csp": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; connect-src ipc: http://ipc.localhost; img-src 'self' data: blob:"
     }
   },
   "bundle": {
     "active": true,
     "targets": "all",
+    "category": "Utility",
+    "shortDescription": "Framework laptop companion: telemetry, fan control, keyboard configurator",
+    "longDescription": "The all-in-one desktop companion for Framework laptops. Live oscilloscope telemetry, fan control, power management, battery health, keyboard/macropad configuration, LED Matrix painting, and system info in one native app.",
+    "homepage": "https://github.com/enkode/FrameworkDeck",
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
@@ -41,14 +46,11 @@
       }
     },
     "linux": {
-      "deb": {
-        "depends": ["libwebkit2gtk-4.1-0", "libappindicator3-1"]
-      },
       "rpm": {
-        "depends": ["webkit2gtk4.1", "libappindicator-gtk3"]
+        "depends": ["webkit2gtk4.1", "gtk3"]
       },
       "appimage": {
-        "bundleMediaFramework": true
+        "bundleMediaFramework": false
       }
     }
   }

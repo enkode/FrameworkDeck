@@ -3,6 +3,8 @@ import { useDeviceStore } from '../../../store/device';
 import { FIRMWARE_CATALOG, getTargetForDevice, type FirmwareEntry } from '../../../data/firmware-catalog';
 import { validateUF2, type UF2ValidationResult } from '../../../utils/uf2';
 import { downloadBuildScript, BUILD_TARGETS, type BuildTarget } from '../../../utils/build-script';
+import { usePlatform } from '../../../hooks/usePlatform';
+import { openExternal } from '../../../utils/openExternal';
 import { Shield, Download, HardDrive, Copy, RefreshCw, ChevronRight, CheckCircle2, FileUp, AlertTriangle, ExternalLink, Terminal, Check, Play } from 'lucide-react';
 import { clsx } from 'clsx';
 
@@ -32,6 +34,18 @@ export function FirmwareStage() {
     const [showBuildGuide, setShowBuildGuide] = useState(false);
     const [buildTarget, setBuildTarget] = useState<BuildTarget>('ansi');
     const [copied, setCopied] = useState(false);
+    const [scriptSavedTo, setScriptSavedTo] = useState<string | null>(null);
+    const platform = usePlatform();
+    const onWindows = platform !== 'linux' && platform !== 'macos';
+
+    const handleDownloadScript = useCallback(async () => {
+        try {
+            const path = await downloadBuildScript(platform ?? 'unknown');
+            setScriptSavedTo(path);
+        } catch (err) {
+            console.error('Build script save failed:', err);
+        }
+    }, [platform]);
 
     const copyToClipboard = useCallback((text: string) => {
         navigator.clipboard.writeText(text).then(() => {
@@ -216,16 +230,14 @@ export function FirmwareStage() {
                                         Download the <span className="font-semibold text-text-secondary">.uf2</span> firmware file
                                         for your {target?.deviceName ?? 'device'}.
                                     </p>
-                                    <a
-                                        href={selectedFirmware.downloadUrl}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
+                                    <button
+                                        onClick={() => openExternal(selectedFirmware.downloadUrl)}
                                         className="flex items-center justify-center gap-2 w-full py-3 rounded-lg bg-primary text-white font-semibold text-sm hover:bg-primary/90 transition-colors"
                                     >
                                         <Download size={16} />
                                         Download from Releases
                                         <ExternalLink size={12} />
-                                    </a>
+                                    </button>
                                 </>
                             ) : (
                                 <>
@@ -241,24 +253,33 @@ export function FirmwareStage() {
                                             <div className="text-xs font-semibold text-text-primary">Automatic Build Script</div>
                                         </div>
                                         <p className="text-[10px] text-text-muted">
-                                            Downloads a PowerShell script that automatically:
+                                            Downloads a {onWindows ? 'PowerShell' : 'bash'} script that automatically:
                                         </p>
                                         <div className="space-y-1 text-[10px] text-text-muted">
                                             <div className="flex gap-2"><span className="text-primary font-bold">1.</span> Clones the firmware source code</div>
-                                            <div className="flex gap-2"><span className="text-primary font-bold">2.</span> Downloads and installs QMK MSYS (build environment)</div>
+                                            <div className="flex gap-2"><span className="text-primary font-bold">2.</span> {onWindows ? 'Downloads and installs QMK MSYS (build environment)' : 'Installs the QMK CLI into a local Python venv'}</div>
                                             <div className="flex gap-2"><span className="text-primary font-bold">3.</span> Asks which device, then compiles the firmware</div>
-                                            <div className="flex gap-2"><span className="text-primary font-bold">4.</span> Copies the .uf2 to your Desktop</div>
+                                            <div className="flex gap-2"><span className="text-primary font-bold">4.</span> Copies the .uf2 to your {onWindows ? 'Desktop' : 'home directory'}</div>
                                         </div>
                                         <button
-                                            onClick={() => downloadBuildScript()}
+                                            onClick={handleDownloadScript}
                                             className="flex items-center justify-center gap-2 w-full py-3 rounded-lg bg-primary text-white font-semibold text-sm hover:bg-primary/90 transition-colors"
                                         >
                                             <Download size={16} />
                                             Download Build Script
                                         </button>
+                                        {scriptSavedTo && (
+                                            <div className="text-[10px] text-green-400">
+                                                Saved to <span className="font-mono">{scriptSavedTo}</span>
+                                            </div>
+                                        )}
                                         <div className="text-[10px] text-text-muted space-y-1">
-                                            <div>Double-click the downloaded <span className="font-mono text-primary">build-firmware.cmd</span> to run it</div>
-                                            <div>Prerequisite: <a href="https://git-scm.com" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Git</a> must be installed and in your PATH</div>
+                                            {onWindows ? (
+                                                <div>Double-click the downloaded <span className="font-mono text-primary">build-firmware.cmd</span> to run it</div>
+                                            ) : (
+                                                <div>Run it with <span className="font-mono text-primary">bash ~/Downloads/build-firmware.sh</span></div>
+                                            )}
+                                            <div>Prerequisite: <button onClick={() => openExternal('https://git-scm.com')} className="text-primary hover:underline">Git</button> must be installed and in your PATH{onWindows ? '' : ' (plus python3)'}</div>
                                         </div>
                                     </div>
 
@@ -266,8 +287,7 @@ export function FirmwareStage() {
                                     <div className="flex items-start gap-2 p-3 rounded-lg bg-amber-500/5 border border-amber-500/20">
                                         <AlertTriangle size={12} className="text-amber-400 shrink-0 mt-0.5" />
                                         <div className="text-[10px] text-amber-400/80">
-                                            <span className="font-semibold">First run:</span> The script will download QMK MSYS (~900 MB)
-                                            and the firmware source (~230 MB). Subsequent runs reuse the existing install.
+                                            <span className="font-semibold">First run:</span> The script will download {onWindows ? 'QMK MSYS (~900 MB) and ' : ''}the firmware source (~230 MB). Subsequent runs reuse the existing install.
                                             Total build time: 5-15 minutes.
                                         </div>
                                     </div>
@@ -302,16 +322,26 @@ export function FirmwareStage() {
                                                 ))}
                                             </div>
                                         );
-                                        const setupScript = [
+                                        const setupScript = onWindows ? [
                                             '# STEP 1 — Run in PowerShell (one time setup)',
                                             'pip install qmk',
                                             `git clone ${repoUrl} $HOME\\qmk_firmware_fw16`,
                                             'qmk setup -H $HOME\\qmk_firmware_fw16 -y',
+                                        ].join('\n') : [
+                                            '# STEP 1 — Run in a terminal (one time setup)',
+                                            'python3 -m venv ~/.qmk_venv && ~/.qmk_venv/bin/pip install qmk',
+                                            `git clone ${repoUrl} ~/qmk_firmware_fw16`,
+                                            '~/.qmk_venv/bin/qmk setup -H ~/qmk_firmware_fw16 -y',
                                         ].join('\n');
-                                        const compileScript = [
+                                        const compileScript = onWindows ? [
                                             '# STEP 2 — Run in "QMK MSYS" (from Start Menu)',
                                             'cd ~/qmk_firmware_fw16',
                                             `qmk compile -kb ${cfg.keyboard} -km ${cfg.keymap}`,
+                                            `echo "Output: ${cfg.outputFile}"`,
+                                        ].join('\n') : [
+                                            '# STEP 2 — Compile',
+                                            'cd ~/qmk_firmware_fw16',
+                                            `~/.qmk_venv/bin/qmk compile -kb ${cfg.keyboard} -km ${cfg.keymap}`,
                                             `echo "Output: ${cfg.outputFile}"`,
                                         ].join('\n');
                                         return (
@@ -319,7 +349,7 @@ export function FirmwareStage() {
                                                 {targetSelector}
                                                 <div className="relative rounded-lg bg-[#1a1a2e] border border-border overflow-hidden">
                                                     <div className="flex items-center justify-between px-3 py-1.5 bg-[#12122a] border-b border-border">
-                                                        <span className="text-[10px] text-text-muted font-mono">PowerShell — Setup</span>
+                                                        <span className="text-[10px] text-text-muted font-mono">{onWindows ? 'PowerShell — Setup' : 'Terminal — Setup'}</span>
                                                         <button
                                                             onClick={() => copyToClipboard(setupScript)}
                                                             className="flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold text-text-muted hover:text-white transition-colors"
@@ -336,7 +366,7 @@ export function FirmwareStage() {
                                                 </div>
                                                 <div className="relative rounded-lg bg-[#1a1a2e] border border-border overflow-hidden">
                                                     <div className="flex items-center justify-between px-3 py-1.5 bg-[#12122a] border-b border-border">
-                                                        <span className="text-[10px] text-text-muted font-mono">QMK MSYS — Compile</span>
+                                                        <span className="text-[10px] text-text-muted font-mono">{onWindows ? 'QMK MSYS — Compile' : 'Terminal — Compile'}</span>
                                                         <button
                                                             onClick={() => copyToClipboard(compileScript)}
                                                             className="flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold text-text-muted hover:text-white transition-colors"
@@ -357,14 +387,12 @@ export function FirmwareStage() {
                                 </>
                             )}
 
-                            <a
-                                href={selectedFirmware.sourceUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="block text-center text-[10px] text-text-muted hover:text-primary transition-colors"
+                            <button
+                                onClick={() => openExternal(selectedFirmware.sourceUrl)}
+                                className="block w-full text-center text-[10px] text-text-muted hover:text-primary transition-colors"
                             >
                                 View source code &rarr;
-                            </a>
+                            </button>
 
                             {/* UF2 Validator */}
                             <div className="border-t border-border pt-4 space-y-3">

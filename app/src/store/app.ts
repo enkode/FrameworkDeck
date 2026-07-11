@@ -55,6 +55,10 @@ interface AppState {
   // Nav rail
   navExpanded: boolean
   setNavExpanded: (v: boolean) => void
+
+  // Framework update notification (BIOS/driver releases)
+  updateAvailable: boolean
+  setUpdateAvailable: (v: boolean) => void
 }
 
 export const useAppStore = create<AppState>()(
@@ -100,7 +104,7 @@ export const useAppStore = create<AppState>()(
       setTempWarnC: (tempWarnC) => set({ tempWarnC }),
 
       // Preferences
-      apiBase: 'http://127.0.0.1:8090',
+      apiBase: 'http://127.0.0.1:30912',
       setApiBase: (apiBase) => set({ apiBase }),
       fontScale: 1.0,
       setFontScale: (fontScale) => set({ fontScale }),
@@ -124,9 +128,25 @@ export const useAppStore = create<AppState>()(
       // Nav rail
       navExpanded: false,
       setNavExpanded: (navExpanded) => set({ navExpanded }),
+
+      // Framework update notification
+      updateAvailable: false,
+      setUpdateAvailable: (updateAvailable) => set({ updateAvailable }),
     }),
     {
       name: 'framework-deck-prefs',
+      version: 1,
+      migrate: (persisted: unknown, version: number) => {
+        const state = persisted as Partial<AppState>
+        if (version < 1) {
+          // v2.2.0 and earlier shipped a wrong default port (8090); the real
+          // framework-control service listens on 30912.
+          if (state.apiBase === 'http://127.0.0.1:8090') {
+            state.apiBase = 'http://127.0.0.1:30912'
+          }
+        }
+        return state as AppState
+      },
       partialize: (s) => ({
         theme: s.theme,
         activeModule: s.activeModule,

@@ -11,6 +11,8 @@ fn main() {
         if std::env::var_os("WEBKIT_DISABLE_DMABUF_RENDERER").is_none() {
             // SAFETY: set_var is technically unsound in multi-threaded contexts, but
             // we're single-threaded here at process start before Tauri spins up.
+            // (unsafe is required in edition 2024; redundant-but-harmless in 2021.)
+            #[allow(unused_unsafe)]
             unsafe { std::env::set_var("WEBKIT_DISABLE_DMABUF_RENDERER", "1"); }
         }
     }
