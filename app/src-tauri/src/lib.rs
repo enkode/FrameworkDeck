@@ -122,7 +122,14 @@ fn save_to_downloads(app: tauri::AppHandle, filename: String, contents: String) 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
-        .plugin(tauri_plugin_log::Builder::new().build())
+        // Info level: reqwest DEBUG/TRACE lines otherwise flow through the log
+        // plugin several times per second (the app polls at 500ms), burning CPU
+        // and growing the log file indefinitely.
+        .plugin(
+            tauri_plugin_log::Builder::new()
+                .level(log::LevelFilter::Info)
+                .build(),
+        )
         .plugin(tauri_plugin_store::Builder::new().build())
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![

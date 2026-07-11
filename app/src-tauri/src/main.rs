@@ -9,11 +9,20 @@ fn main() {
     #[cfg(target_os = "linux")]
     {
         if std::env::var_os("WEBKIT_DISABLE_DMABUF_RENDERER").is_none() {
-            // SAFETY: set_var is technically unsound in multi-threaded contexts, but
-            // we're single-threaded here at process start before Tauri spins up.
-            // (unsafe is required in edition 2024; redundant-but-harmless in 2021.)
-            #[allow(unused_unsafe)]
-            unsafe { std::env::set_var("WEBKIT_DISABLE_DMABUF_RENDERER", "1"); }
+            // The EGL failure is reported on KDE Wayland (CachyOS); GNOME/Mesa
+            // renders fine on the DMA-BUF (GPU) path and disabling it there
+            // forces software compositing that costs a large slice of a core.
+            // So: GNOME keeps GPU rendering, everything else gets the safe
+            // workaround. Users can override by setting the var themselves.
+            let desktop = std::env::var("XDG_CURRENT_DESKTOP")
+                .unwrap_or_default()
+                .to_uppercase();
+            if !desktop.contains("GNOME") {
+                // SAFETY: single-threaded here at process start before Tauri spins up.
+                // (unsafe is required in edition 2024; redundant-but-harmless in 2021.)
+                #[allow(unused_unsafe)]
+                unsafe { std::env::set_var("WEBKIT_DISABLE_DMABUF_RENDERER", "1"); }
+            }
         }
     }
     framework_deck_lib::run();

@@ -32,6 +32,10 @@ Format: `[version] YYYY-MM-DD — description`
 - reqwest switched to rustls — no more dynamic OpenSSL linkage breaking the AppImage on distros with mismatched libssl
 
 **Fixed on all platforms:**
+- **Oscilloscope was repainting at 60fps instead of ~5fps** — the redraw dirty-check compared wall-clock time against a sample timestamp, so it was always true (even with zero data). Combined with `ctx.shadowBlur` glow (a per-stroke gaussian blur) and Linux software rendering this pegged most of a CPU core. Fixed the dirty-check (separate data-ts and wall-clock tracking), replaced shadowBlur with a cheap two-pass glow stroke, and skip drawing while the window is hidden. Measured: 93% of a core → under 20% on a heavily loaded system
+- **Fan/Power/Battery controls no longer render as live when the service is offline** — previously every button silently posted into the void; now those modules show an explicit "SERVICE OFFLINE — CONTROLS DISABLED" state with setup instructions
+- Linux: the webkit DMA-BUF workaround is now desktop-aware — GNOME keeps GPU rendering (verified working; software fallback cost ~2× CPU), KDE and unknown compositors get the safe workaround; explicit env still overrides
+- Log level capped at Info — reqwest DEBUG/TRACE spam no longer flows through the log plugin several times per second
 - Settings persistence and file logging were silently dead: the code checked `__TAURI__` (a Tauri v1 marker) instead of `__TAURI_INTERNALS__`, and the store/log plugin permissions were missing from the capability file. Both fixed; settings now persist to `config.json` as designed
 - Wrong service port shown to users: UI said 127.0.0.1:8090; the real framework-control port is 30912 (persisted settings migrate automatically)
 - Fonts (JetBrains Mono, Inter) are now bundled with the app instead of loaded from Google Fonts — works fully offline, no CDN call on every launch

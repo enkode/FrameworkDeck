@@ -47,6 +47,7 @@ export function OscilloscopeView({ history, channels, activeChannels, timeWindow
   const [hover, setHover] = useState<HoverInfo | null>(null)
   const [canvasHeight, setCanvasHeight] = useState(0)
   const lastDrawnTsRef = useRef(0)
+  const lastDrawWallRef = useRef(0)
   const rafRef = useRef<number>(0)
 
   // Invalidate color cache when theme changes
@@ -170,15 +171,14 @@ export function OscilloscopeView({ history, channels, activeChannels, timeWindow
       ctx.rect(LEFT_PAD, laneTop, traceW, LANE_H)
       ctx.clip()
 
-      // Draw trace
+      // Draw trace. Glow is faked with a wide translucent under-stroke:
+      // ctx.shadowBlur is a per-stroke gaussian blur and by far the most
+      // expensive op in this draw — with software rendering it alone cost a
+      // large fraction of a core at every repaint.
       if (samples.length > 1) {
         const traceColor = resolveCssVar(ch.colorVar)
         const glowColor = resolveCssVar(ch.glowVar)
         ctx.beginPath()
-        ctx.strokeStyle = traceColor
-        ctx.shadowColor = glowColor
-        ctx.shadowBlur = 4
-        ctx.lineWidth = 1.5
         ctx.lineJoin = 'round'
 
         let started = false
@@ -193,8 +193,16 @@ export function OscilloscopeView({ history, channels, activeChannels, timeWindow
           if (!started) { ctx.moveTo(x, y); started = true }
           else { ctx.lineTo(x, y) }
         }
+        // Glow pass: same path, wide + translucent
+        ctx.strokeStyle = glowColor
+        ctx.globalAlpha = 0.25
+        ctx.lineWidth = 4
         ctx.stroke()
-        ctx.shadowBlur = 0
+        // Core pass
+        ctx.globalAlpha = 1
+        ctx.strokeStyle = traceColor
+        ctx.lineWidth = 1.5
+        ctx.stroke()
       }
 
       // Warning threshold line (temp channels)
@@ -304,16 +312,22 @@ export function OscilloscopeView({ history, channels, activeChannels, timeWindow
     ro.observe(container)
     resize()
 
-    // Use rAF loop that only redraws when data has changed or enough time passed
+    // rAF loop that only redraws when new data arrived or 200ms passed.
+    // Data-ts and wall-clock must be tracked SEPARATELY: comparing Date.now()
+    // against a sample timestamp made the elapsed check always-true, which
+    // meant a full-canvas software repaint every frame (~a whole core).
     let running = true
     const loop = () => {
       if (!running) return
+      if (document.hidden) { rafRef.current = requestAnimationFrame(loop); return }
       const lastTs = history.length > 0 ? history[history.length - 1].ts_ms : 0
       const now = Date.now()
-      // Redraw if new data arrived or 200ms elapsed (for time cursor advancement)
-      if (lastTs !== lastDrawnTsRef.current || now - lastDrawnTsRef.current > 200) {
+      const dataChanged = lastTs !== lastDrawnTsRef.current
+      const cursorStale = now - lastDrawWallRef.current > 200
+      if (dataChanged || cursorStale) {
         draw()
-        lastDrawnTsRef.current = lastTs || now
+        lastDrawnTsRef.current = lastTs
+        lastDrawWallRef.current = now
       }
       rafRef.current = requestAnimationFrame(loop)
     }

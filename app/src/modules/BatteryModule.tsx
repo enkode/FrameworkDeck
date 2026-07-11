@@ -1,5 +1,6 @@
 import { fs } from '../utils/font'
 import { usePower } from '../hooks/usePower'
+import { useHealth } from '../hooks/useHealth'
 import { useConfig } from '../hooks/useConfig'
 import { Panel } from '../components/layout/Panel'
 import { LEDIndicator } from '../components/analog/LEDIndicator'
@@ -45,6 +46,7 @@ function LevelBar({ value, max, color }: { value: number; max: number; color: st
 }
 
 export function BatteryModule() {
+  const { connected } = useHealth()
   const { data: power } = usePower()
   const { data: config, updateConfig } = useConfig()
 
@@ -71,6 +73,28 @@ export function BatteryModule() {
   }
 
   const socColor = soc != null && soc < 15 ? '#cc2222' : soc != null && soc < 30 ? '#c09060' : '#e8e0d0'
+
+  if (!connected) {
+    return (
+      <div style={{
+        height: '100%', background: 'var(--bg)',
+        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 14,
+      }}>
+        <span style={{ ...mono, fontSize: fs(12), color: 'var(--cream)', letterSpacing: '0.15em' }}>BATTERY HEALTH</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <LEDIndicator active color="#cc2222" size={8} />
+          <span style={{ ...mono, fontSize: fs(10), color: '#cc2222', letterSpacing: '0.1em' }}>
+            SERVICE OFFLINE — DATA UNAVAILABLE
+          </span>
+        </div>
+        <div style={{ ...mono, fontSize: fs(9), color: '#555555', textAlign: 'center', lineHeight: 1.9, maxWidth: 440 }}>
+          Battery health and charge limits require the framework-control service.<br />
+          Linux: <span style={{ color: '#888888' }}>sudo systemctl status framework-control</span> ·
+          install: <span style={{ color: '#888888' }}>github.com/ozturkkl/framework-control</span>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div style={{ height: '100%', overflow: 'auto', background: 'var(--bg)', padding: '24px 32px' }}>

@@ -371,6 +371,31 @@ export function FanModule() {
   const MODES: FanMode[] = ['disabled', 'manual', 'curve']
   const MODE_LABELS: Record<FanMode, string> = { disabled: 'AUTO', manual: 'MANUAL', curve: 'CURVE' }
 
+  // Hard gate: with the service offline every control here is a dead button
+  // that silently posts into the void. Say so instead of letting users click.
+  if (!connected) {
+    return (
+      <div style={{
+        height: '100%', background: 'var(--bg)',
+        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 14,
+      }}>
+        <span style={{ ...mono, fontSize: fs(12), color: 'var(--cream)', letterSpacing: '0.15em' }}>FAN CONTROL</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <LEDIndicator active color="#cc2222" size={8} />
+          <span style={{ ...mono, fontSize: fs(10), color: '#cc2222', letterSpacing: '0.1em' }}>
+            SERVICE OFFLINE — CONTROLS DISABLED
+          </span>
+        </div>
+        <div style={{ ...mono, fontSize: fs(9), color: '#555555', textAlign: 'center', lineHeight: 1.9, maxWidth: 440 }}>
+          Fan control (and all telemetry) requires the framework-control service.<br />
+          Linux: <span style={{ color: '#888888' }}>sudo systemctl status framework-control</span><br />
+          Not installed? <span style={{ color: '#888888' }}>github.com/ozturkkl/framework-control</span> — one-line installer in the README.<br />
+          Until it's running, the EC manages fans automatically in hardware.
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div style={{
       height: '100%',
