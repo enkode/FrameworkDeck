@@ -106,6 +106,77 @@ ConvertTo-Json -InputObject @($drv) -Depth 3 -Compress
     }
 }
 
+/// Install the framework-control backend service (the telemetry/fan/power
+/// provider this app fronts). Linux: downloads the release tarball, verifies
+/// its SHA256, installs binary + systemd unit — all inside one pkexec (polkit
+/// GUI auth) session. Windows: downloads the MSI and launches msiexec (UAC).
+#[tauri::command]
+pub async fn install_framework_control() -> Result<String, String> {
+    #[cfg(target_os = "linux")]
+    {
+        const SCRIPT: &str = r#"#!/usr/bin/env bash
+set -euo pipefail
+REPO="ozturkkl/framework-control"
+TARBALL="framework-control-service-x86_64.tar.gz"
+tmp=$(mktemp -d)
+trap 'rm -rf "$tmp"' EXIT
+cd "$tmp"
+curl -fsSL -o "$TARBALL" "https://github.com/$REPO/releases/latest/download/$TARBALL"
+curl -fsSL -o SHA256SUMS "https://github.com/$REPO/releases/latest/download/SHA256SUMS"
+grep "$TARBALL" SHA256SUMS | sha256sum -c -
+tar -xzf "$TARBALL"
+install -m 755 framework-control /usr/local/bin/framework-control
+install -m 644 framework-control.service /etc/systemd/system/framework-control.service
+systemctl daemon-reload
+systemctl enable --now framework-control.service
+sleep 2
+systemctl is-active framework-control.service
+"#;
+        return tauri::async_runtime::spawn_blocking(|| {
+            let path = std::env::temp_dir().join("fwdeck-install-framework-control.sh");
+            std::fs::write(&path, SCRIPT).map_err(|e| format!("write installer: {}", e))?;
+            let output = std::process::Command::new("pkexec")
+                .arg("bash")
+                .arg(&path)
+                .output()
+                .map_err(|e| format!("pkexec launch failed (is polkit available?): {}", e))?;
+            let _ = std::fs::remove_file(&path);
+            let stdout = String::from_utf8_lossy(&output.stdout);
+            let stderr = String::from_utf8_lossy(&output.stderr);
+            if output.status.success() && stdout.contains("active") {
+                Ok("installed".to_string())
+            } else if output.status.code() == Some(126) || output.status.code() == Some(127) {
+                Err("Authorization was cancelled".to_string())
+            } else {
+                Err(format!(
+                    "install failed (exit {:?}): {} {}",
+                    output.status.code(),
+                    stdout.trim(),
+                    stderr.trim()
+                ))
+            }
+        })
+        .await
+        .map_err(|e| e.to_string())?;
+    }
+    #[cfg(target_os = "windows")]
+    {
+        const SCRIPT: &str = r#"
+$msi = Join-Path $env:TEMP 'framework-control-service-x86_64.msi'
+Invoke-WebRequest -Uri 'https://github.com/ozturkkl/framework-control/releases/latest/download/framework-control-service-x86_64.msi' -OutFile $msi
+Start-Process msiexec.exe -ArgumentList '/i', $msi -Wait
+'installed'
+"#;
+        return tauri::async_runtime::spawn_blocking(|| crate::graphics::win::run_ps(SCRIPT))
+            .await
+            .map_err(|e| e.to_string())?;
+    }
+    #[cfg(not(any(target_os = "linux", target_os = "windows")))]
+    {
+        Err("in-app install not supported on this platform".to_string())
+    }
+}
+
 /// Fetch a Framework Knowledge Base / downloads page (HTML or JSON) so the
 /// frontend can parse latest BIOS + driver-bundle versions. Restricted to
 /// frame.work properties — this is not a general-purpose proxy.

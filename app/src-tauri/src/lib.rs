@@ -140,6 +140,7 @@ pub fn run() {
             updates::get_device_info,
             updates::get_installed_drivers,
             updates::fetch_framework_releases,
+            updates::install_framework_control,
             graphics::get_graphics_state,
             graphics::get_dxgkrnl_events,
             graphics::get_gpu_preferences,

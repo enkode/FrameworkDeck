@@ -7,9 +7,10 @@ import { useAppStore } from '../store/app'
 import { openExternal } from '../utils/openExternal'
 import { isTauri } from '../utils/platform'
 import {
-  checkForUpdates, getInstalledDrivers, getLastStatus, setLastStatus,
-  type UpdateStatus, type InstalledDriver, type LinuxInventory,
+  checkForUpdates, getInstalledDrivers, getLastStatus, setLastStatus, compareComponents,
+  type UpdateStatus, type InstalledDriver, type LinuxInventory, type ComponentComparison,
 } from '../services/UpdatesService'
+import { useMemo } from 'react'
 import { RefreshCw, ExternalLink, Download } from 'lucide-react'
 
 const mono: React.CSSProperties = { fontFamily: 'JetBrains Mono, monospace' }
@@ -90,6 +91,20 @@ export function UpdatesModule() {
 
   const windowsDrivers = Array.isArray(inventory) ? (inventory as InstalledDriver[]) : null
   const linuxInv = !Array.isArray(inventory) && inventory ? (inventory as LinuxInventory) : null
+
+  // Installed-vs-bundle comparison (Windows only — bundles don't apply on Linux)
+  const comparisons: ComponentComparison[] | null = useMemo(() => {
+    if (platform !== 'windows' || !latest?.components.length || !windowsDrivers?.length) return null
+    return compareComponents(latest.components, windowsDrivers)
+  }, [platform, latest, windowsDrivers])
+  const updatesSuggested = comparisons?.filter((c) => c.verdict === 'update').length ?? 0
+
+  const VERDICT_STYLE: Record<ComponentComparison['verdict'], { label: string; color: string }> = {
+    update: { label: 'UPDATE AVAILABLE', color: '#cc8800' },
+    current: { label: 'CURRENT', color: '#22cc44' },
+    newer: { label: 'NEWER THAN BUNDLE', color: '#2255aa' },
+    unknown: { label: '—', color: '#444444' },
+  }
   const fwupdDevices: { Name?: string; Version?: string; Plugin?: string }[] =
     (linuxInv?.fwupd as { Devices?: { Name?: string; Version?: string; Plugin?: string }[] } | null)?.Devices?.filter((d) => d.Version) ?? []
 
@@ -184,14 +199,20 @@ export function UpdatesModule() {
           <div style={{ padding: '12px 14px' }}>
             <InfoRow label="LATEST BUNDLE" value={latest?.bundleVersion ? `v${latest.bundleVersion}` : null} color="var(--cream)" />
             <InfoRow label="RELEASED" value={latest?.bundleDate} />
-            {platform === 'windows' ? (
-              latest?.bundleUrl && (
-                <ActionButton label="DOWNLOAD DRIVER BUNDLE" icon={Download} onClick={() => openExternal(latest.bundleUrl!)} />
-              )
-            ) : (
-              <div style={{ ...mono, fontSize: fs(9), color: '#555555', marginTop: 6, lineHeight: 1.5 }}>
-                Driver bundles are Windows-only. On Linux, drivers ship with the
-                kernel; device firmware comes via fwupd (below).
+            <InfoRow label="COMPONENTS" value={latest?.components.length ? `${latest.components.length} drivers (${latest.components.filter((c) => c.changed).length} updated in this bundle)` : null} />
+            {latest && (
+              <div>
+                <ActionButton label="RELEASE NOTES" icon={ExternalLink} onClick={() => openExternal(latest.pageUrl)} />
+                {platform === 'windows' && latest.bundleUrl && (
+                  <ActionButton label="DOWNLOAD DRIVER BUNDLE" icon={Download} onClick={() => openExternal(latest.bundleUrl!)} />
+                )}
+              </div>
+            )}
+            {platform !== 'windows' && (
+              <div style={{ ...mono, fontSize: fs(9), color: '#555555', marginTop: 8, lineHeight: 1.5 }}>
+                Bundle installers are Windows-only. On Linux the equivalents ship
+                with the kernel and fwupd (below); the component list is shown
+                for reference.
               </div>
             )}
             {latest && !latest.bundleVersion && (
@@ -225,6 +246,66 @@ export function UpdatesModule() {
           </Panel>
         )}
       </div>
+
+      {/* ── Bundle components: installed vs latest ── */}
+      {latest && latest.components.length > 0 && (
+        <div style={{ maxWidth: 1100, marginTop: 16 }}>
+          <Panel label={
+            platform === 'windows'
+              ? `BUNDLE COMPONENTS — INSTALLED VS v${latest.bundleVersion ?? '?'}${updatesSuggested > 0 ? ` (${updatesSuggested} UPDATE${updatesSuggested > 1 ? 'S' : ''} SUGGESTED)` : ''}`
+              : `BUNDLE COMPONENTS (v${latest.bundleVersion ?? '?'})`
+          }>
+            <div style={{ padding: '12px 14px', overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead>
+                  <tr>
+                    {(platform === 'windows'
+                      ? ['COMPONENT', 'BUNDLE VERSION', 'INSTALLED', 'STATUS']
+                      : ['COMPONENT', 'VERSION', 'CHANGED IN THIS BUNDLE']
+                    ).map((h) => (
+                      <th key={h} style={{ ...mono, fontSize: fs(9), color: '#444444', letterSpacing: '0.1em', textAlign: 'left', padding: '4px 10px 8px 0', borderBottom: '1px solid var(--border)' }}>
+                        {h}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {platform === 'windows' && comparisons
+                    ? comparisons.map((c, i) => (
+                        <tr key={i}>
+                          <td style={{ ...mono, fontSize: fs(10), color: 'var(--cream-dim)', padding: '4px 10px 4px 0' }}>{c.component.name}</td>
+                          <td style={{ ...mono, fontSize: fs(10), color: 'var(--cream)', padding: '4px 10px 4px 0', whiteSpace: 'nowrap' }}>{c.component.version}</td>
+                          <td style={{ ...mono, fontSize: fs(10), color: c.installedVersion ? '#888888' : '#333333', padding: '4px 10px 4px 0', whiteSpace: 'nowrap' }}>
+                            {c.installedVersion ?? 'not matched'}
+                          </td>
+                          <td style={{ ...mono, fontSize: fs(9), color: VERDICT_STYLE[c.verdict].color, letterSpacing: '0.06em', padding: '4px 0', whiteSpace: 'nowrap' }}>
+                            {VERDICT_STYLE[c.verdict].label}
+                          </td>
+                        </tr>
+                      ))
+                    : latest.components.map((c, i) => (
+                        <tr key={i}>
+                          <td style={{ ...mono, fontSize: fs(10), color: 'var(--cream-dim)', padding: '4px 10px 4px 0' }}>{c.name}</td>
+                          <td style={{ ...mono, fontSize: fs(10), color: 'var(--cream)', padding: '4px 10px 4px 0', whiteSpace: 'nowrap' }}>{c.version}</td>
+                          <td style={{ ...mono, fontSize: fs(9), color: c.changed ? '#cc8800' : '#444444', letterSpacing: '0.06em', padding: '4px 0' }}>
+                            {c.changed ? 'UPDATED' : 'same'}
+                          </td>
+                        </tr>
+                      ))}
+                </tbody>
+              </table>
+              {platform === 'windows' && (
+                <div style={{ ...mono, fontSize: fs(9), color: '#444444', marginTop: 10, lineHeight: 1.5 }}>
+                  Matching is best-effort (driver naming differs between the bundle
+                  and Windows). "not matched" means no confident pairing — check the
+                  installed drivers table below manually. Framework vets the bundle
+                  as a whole: when in doubt, install the full bundle.
+                </div>
+              )}
+            </div>
+          </Panel>
+        </div>
+      )}
 
       {/* ── Windows driver table ─────────────── */}
       {platform === 'windows' && (

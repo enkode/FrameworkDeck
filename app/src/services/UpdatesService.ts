@@ -31,6 +31,13 @@ export interface DeviceInfo {
   os: string
 }
 
+export interface BundleComponent {
+  name: string
+  version: string
+  /** The KB's own "Updated?" column: whether this component changed vs the previous bundle. */
+  changed: boolean
+}
+
 export interface LatestRelease {
   family: string
   generation: string
@@ -42,6 +49,7 @@ export interface LatestRelease {
   biosExeUrl: string | null
   biosEfiUrl: string | null
   bundleUrl: string | null
+  components: BundleComponent[]
 }
 
 export interface UpdateStatus {
@@ -173,6 +181,25 @@ export function parseIndexRows(
   return { rows, match }
 }
 
+/** Parse the "Driver Bundle Components" table (Driver | Version | Updated?). */
+function parseBundleComponents(doc: string): BundleComponent[] {
+  const i = doc.indexOf('Driver Bundle Components')
+  if (i < 0) return []
+  const section = doc.slice(i, i + 8000)
+  const components: BundleComponent[] = []
+  for (const row of section.matchAll(/<tr>(.*?)<\/tr>/gs)) {
+    const cells = [...row[1].matchAll(/<td[^>]*>(.*?)<\/td>/gs)].map((c) => stripTags(c[1]))
+    if (cells.length < 2 || !cells[0] || !cells[1]) continue
+    if (/^driver$/i.test(cells[0])) continue // header rendered as <td> on some pages
+    components.push({
+      name: cells[0],
+      version: cells[1],
+      changed: /updated|new/i.test(cells[2] ?? ''),
+    })
+  }
+  return components
+}
+
 /** Parse a per-device release page for versions + download links. */
 export function parseDevicePage(html: string): {
   biosVersion: string | null
@@ -181,6 +208,7 @@ export function parseDevicePage(html: string): {
   biosExeUrl: string | null
   biosEfiUrl: string | null
   bundleUrl: string | null
+  components: BundleComponent[]
 } {
   const doc = decodeKbHtml(html)
 
@@ -204,6 +232,7 @@ export function parseDevicePage(html: string): {
     biosExeUrl,
     biosEfiUrl,
     bundleUrl,
+    components: parseBundleComponents(doc),
   }
 }
 
@@ -266,6 +295,7 @@ export async function checkForUpdates(): Promise<UpdateStatus> {
       biosExeUrl: page.biosExeUrl,
       biosEfiUrl: page.biosEfiUrl,
       bundleUrl: page.bundleUrl,
+      components: page.components,
     }
 
     if (page.biosVersion && status.device.biosVersion) {
@@ -284,6 +314,93 @@ export async function getInstalledDrivers(): Promise<InstalledDriver[] | LinuxIn
   if (!isTauri) return null
   const raw = await invoke<string>('get_installed_drivers')
   return JSON.parse(raw)
+}
+
+// ── Installed-vs-bundle comparison (Windows) ─────────────────
+
+export interface ComponentComparison {
+  component: BundleComponent
+  installedName: string | null
+  installedVersion: string | null
+  verdict: 'update' | 'current' | 'newer' | 'unknown'
+}
+
+interface MatchRule {
+  pattern: RegExp
+  classes: string[]
+  provider?: RegExp
+  deviceName?: RegExp
+  /** Transform installed DriverVersion before comparing (e.g. NVIDIA UMD → marketing). */
+  normalizeInstalled?: (v: string) => string
+  /** Pick the comparable part of the bundle version string. */
+  normalizeBundle?: (v: string) => string
+}
+
+/** NVIDIA UMD "32.0.15.9649" → marketing "596.49" (last five digits, dot before last two). */
+function nvidiaMarketingVersion(v: string): string {
+  const digits = v.replace(/\D/g, '')
+  if (digits.length < 5) return v
+  const last5 = digits.slice(-5)
+  return `${last5.slice(0, 3)}.${last5.slice(3)}`
+}
+
+const MATCH_RULES: MatchRule[] = [
+  {
+    pattern: /nvidia graphics/i,
+    classes: ['DISPLAY'],
+    provider: /nvidia/i,
+    normalizeInstalled: nvidiaMarketingVersion,
+  },
+  {
+    pattern: /amd graphics/i,
+    classes: ['DISPLAY'],
+    provider: /advanced micro|amd/i,
+    // Bundle lists "26.3.1 (v32.0.23033.1002)" — the parenthesized UMD version
+    // is what Windows reports as DriverVersion.
+    normalizeBundle: (v) => v.match(/\(v?([\d.]+)\)/)?.[1] ?? v,
+  },
+  { pattern: /realtek audio driver/i, classes: ['MEDIA'], provider: /realtek/i },
+  { pattern: /wifi/i, classes: ['NET'], deviceName: /wi.?fi|wireless|wlan|rz\d|mt79/i },
+  { pattern: /bluetooth/i, classes: ['BLUETOOTH'] },
+  { pattern: /goodix|fingerprint/i, classes: ['BIOMETRIC', 'HIDCLASS', 'USB'], deviceName: /goodix|fingerprint/i },
+  { pattern: /camera/i, classes: ['MEDIA', 'USB', 'SYSTEM'], deviceName: /camera/i },
+  { pattern: /ethernet/i, classes: ['NET'], deviceName: /ethernet|gbe/i },
+  { pattern: /chipset/i, classes: ['SYSTEM'], deviceName: /chipset/i },
+]
+
+/**
+ * Best-effort mapping of bundle components onto the installed-driver
+ * inventory. Anything without a confident match is reported 'unknown'
+ * rather than guessed.
+ */
+export function compareComponents(
+  components: BundleComponent[],
+  installed: InstalledDriver[],
+): ComponentComparison[] {
+  return components.map((component) => {
+    const rule = MATCH_RULES.find((r) => r.pattern.test(component.name))
+    if (!rule) {
+      return { component, installedName: null, installedVersion: null, verdict: 'unknown' as const }
+    }
+    const candidates = installed.filter((d) =>
+      rule.classes.includes(d.class.toUpperCase()) &&
+      (!rule.provider || rule.provider.test(d.provider)) &&
+      (!rule.deviceName || rule.deviceName.test(d.name)),
+    )
+    if (candidates.length === 0) {
+      return { component, installedName: null, installedVersion: null, verdict: 'unknown' as const }
+    }
+    // Highest installed version among matches (multi-device entries share drivers)
+    const best = candidates.reduce((a, b) =>
+      (compareBiosVersions(a.version, b.version) ?? 0) >= 0 ? a : b,
+    )
+    const bundleV = (rule.normalizeBundle?.(component.version) ?? component.version).trim()
+    const installedV = (rule.normalizeInstalled?.(best.version) ?? best.version).trim()
+    const cmp = compareBiosVersions(installedV, bundleV)
+    const verdict: ComponentComparison['verdict'] =
+      cmp === null ? 'unknown' : cmp < 0 ? 'update' : cmp > 0 ? 'newer' : 'current'
+    return { component, installedName: best.name, installedVersion: installedV, verdict }
+  })
 }
 
 // ── Launch-time auto check (throttled) ───────────────────────

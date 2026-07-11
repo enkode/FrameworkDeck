@@ -5,6 +5,7 @@ import { useConfig } from '../hooks/useConfig'
 import { useAppStore } from '../store/app'
 import { Panel } from '../components/layout/Panel'
 import { LEDIndicator } from '../components/analog/LEDIndicator'
+import { InstallServicePrompt } from '../components/shared/InstallServicePrompt'
 import type { PowerProfile } from '../api/types'
 
 const mono: React.CSSProperties = { fontFamily: 'JetBrains Mono, monospace' }
@@ -114,11 +115,12 @@ export function PowerModule() {
             SERVICE OFFLINE — CONTROLS DISABLED
           </span>
         </div>
-        <div style={{ ...mono, fontSize: fs(9), color: '#555555', textAlign: 'center', lineHeight: 1.9, maxWidth: 440 }}>
-          TDP, thermal limit, and charge control require the framework-control service.<br />
-          Linux: <span style={{ color: '#888888' }}>sudo systemctl status framework-control</span> ·
-          install: <span style={{ color: '#888888' }}>github.com/ozturkkl/framework-control</span>
+        <div style={{ ...mono, fontSize: fs(9), color: '#555555', textAlign: 'center', lineHeight: 1.9, maxWidth: 460 }}>
+          All telemetry and hardware control comes from the framework-control service.
+          Install it below (admin prompt), or check an existing install with{' '}
+          <span style={{ color: '#888888' }}>sudo systemctl status framework-control</span>.
         </div>
+        <InstallServicePrompt />
       </div>
     )
   }

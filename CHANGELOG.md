@@ -31,6 +31,12 @@ Format: `[version] YYYY-MM-DD — description`
 - Bundle metadata added: category, descriptions, homepage — the app now lands in the right desktop menu category
 - reqwest switched to rustls — no more dynamic OpenSSL linkage breaking the AppImage on distros with mismatched libssl
 
+**In-app service install + driver detail (added after first field session):**
+- **One-click framework-control install** from every "SERVICE OFFLINE" screen: Linux downloads the release, verifies its SHA256, and installs the systemd service through a single polkit (pkexec) authorization; Windows downloads the MSI and launches the installer. A "View on GitHub" link accompanies it — no more "install something" with no path to do it
+- **Driver Bundle components table**: the Updates module now parses the full per-driver component list (17 entries: chipset, GPU, audio, WiFi, fingerprint, EC, …) out of Framework's release page, shows each component's bundle version, and on Windows best-effort matches them against installed drivers — flagging UPDATE AVAILABLE / CURRENT / NEWER per driver (handles NVIDIA UMD↔marketing version conversion and AMD's dual version format). Release-notes and bundle download links added to the panel on all platforms
+- **Charge limit UX**: when the service is connected but no limit is configured, the Battery page now offers ENABLE CHARGE LIMIT (seeded from the EC's active limit) instead of wrongly claiming the service is missing
+- Default fan-curve ramp rate raised (5→20%/step) so spiky loads get cooling in seconds, not half a minute
+
 **Fixed on all platforms:**
 - **Oscilloscope was repainting at 60fps instead of ~5fps** — the redraw dirty-check compared wall-clock time against a sample timestamp, so it was always true (even with zero data). Combined with `ctx.shadowBlur` glow (a per-stroke gaussian blur) and Linux software rendering this pegged most of a CPU core. Fixed the dirty-check (separate data-ts and wall-clock tracking), replaced shadowBlur with a cheap two-pass glow stroke, and skip drawing while the window is hidden. Measured: 93% of a core → under 20% on a heavily loaded system
 - **Fan/Power/Battery controls no longer render as live when the service is offline** — previously every button silently posted into the void; now those modules show an explicit "SERVICE OFFLINE — CONTROLS DISABLED" state with setup instructions
