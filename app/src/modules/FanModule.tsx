@@ -7,6 +7,7 @@ import { useConfig } from '../hooks/useConfig'
 import { useAppStore } from '../store/app'
 import { Panel } from '../components/layout/Panel'
 import { LEDIndicator } from '../components/analog/LEDIndicator'
+import { InstallServicePrompt } from '../components/shared/InstallServicePrompt'
 import type { FanMode, FanControlConfig } from '../api/types'
 
 const mono: React.CSSProperties = { fontFamily: 'JetBrains Mono, monospace' }
@@ -25,6 +26,9 @@ const PRESETS: Record<string, { label: string; points: [number, number][] }> = {
 
 // ── Fan Curve Canvas ─────────────────────────────────────────
 
+// Plot padding: temp axis labels on the left, temp ticks below
+const pad = { l: 44, r: 16, t: 16, b: 32 }
+
 interface CurveEditorProps {
   points: [number, number][]
   onPointsChange: (pts: [number, number][]) => void
@@ -41,7 +45,6 @@ function FanCurveEditor({ points, onPointsChange, currentTemp, currentDuty, hyst
   const [size, setSize] = useState({ w: 500, h: 300 })
 
   // Coordinate system: temp 0-110°C on X, duty 0-100% on Y
-  const pad = { l: 44, r: 16, t: 16, b: 32 }
   const plotW = size.w - pad.l - pad.r
   const plotH = size.h - pad.t - pad.b
 
@@ -104,7 +107,8 @@ function FanCurveEditor({ points, onPointsChange, currentTemp, currentDuty, hyst
       sorted.forEach((p, i) => {
         const x = tempToX(p[0] - hysteresisC)
         const y = dutyToY(p[1])
-        i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y)
+        if (i === 0) ctx.moveTo(x, y)
+        else ctx.lineTo(x, y)
       })
       sorted.slice().reverse().forEach((p) => {
         ctx.lineTo(tempToX(p[0]), dutyToY(p[1]))
@@ -122,7 +126,8 @@ function FanCurveEditor({ points, onPointsChange, currentTemp, currentDuty, hyst
     sorted.forEach((p, i) => {
       const x = tempToX(p[0])
       const y = dutyToY(p[1])
-      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y)
+      if (i === 0) ctx.moveTo(x, y)
+      else ctx.lineTo(x, y)
     })
     ctx.stroke()
 
@@ -298,12 +303,14 @@ export function FanModule() {
   )
   const [curveModified, setCurveModified] = useState(false)
 
-  // Sync from server when config arrives
-  useEffect(() => {
+  // Sync from server when config arrives (render-time adjustment, per React docs)
+  const [prevServerPoints, setPrevServerPoints] = useState(serverCurvePoints)
+  if (serverCurvePoints !== prevServerPoints) {
+    setPrevServerPoints(serverCurvePoints)
     if (serverCurvePoints && !curveModified) {
       setLocalCurvePoints(serverCurvePoints)
     }
-  }, [serverCurvePoints, curveModified])
+  }
 
   const [hysteresisC, setHysteresisC] = useState(fanConfig?.curve?.hysteresis_c ?? 3)
   const [rateLimitPct, setRateLimitPct] = useState(fanConfig?.curve?.rate_limit_pct_per_step ?? 5)
@@ -364,6 +371,31 @@ export function FanModule() {
 
   const MODES: FanMode[] = ['disabled', 'manual', 'curve']
   const MODE_LABELS: Record<FanMode, string> = { disabled: 'AUTO', manual: 'MANUAL', curve: 'CURVE' }
+
+  // Hard gate: with the service offline every control here is a dead button
+  // that silently posts into the void. Say so instead of letting users click.
+  if (!connected) {
+    return (
+      <div style={{
+        height: '100%', background: 'var(--bg)',
+        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 14,
+      }}>
+        <span style={{ ...mono, fontSize: fs(12), color: 'var(--cream)', letterSpacing: '0.15em' }}>FAN CONTROL</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <LEDIndicator active color="#cc2222" size={8} />
+          <span style={{ ...mono, fontSize: fs(10), color: '#cc2222', letterSpacing: '0.1em' }}>
+            SERVICE OFFLINE — CONTROLS DISABLED
+          </span>
+        </div>
+        <div style={{ ...mono, fontSize: fs(9), color: '#555555', textAlign: 'center', lineHeight: 1.9, maxWidth: 460 }}>
+          All telemetry and hardware control comes from the framework-control service.
+          Install it below (admin prompt), or check an existing install with{' '}
+          <span style={{ color: '#888888' }}>sudo systemctl status framework-control</span>.
+        </div>
+        <InstallServicePrompt />
+      </div>
+    )
+  }
 
   return (
     <div style={{

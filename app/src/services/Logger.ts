@@ -10,7 +10,8 @@ async function loadTauriLog() {
     if (tauriLoaded) return;
     tauriLoaded = true;
     try {
-        if ('__TAURI__' in window) {
+        // Tauri v2 marker — __TAURI__ only exists with withGlobalTauri enabled.
+        if ('__TAURI_INTERNALS__' in window) {
             const mod = await import('@tauri-apps/plugin-log');
             tauriInfo = mod.info;
             tauriWarn = mod.warn;

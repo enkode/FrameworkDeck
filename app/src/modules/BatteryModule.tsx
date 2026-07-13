@@ -1,8 +1,10 @@
 import { fs } from '../utils/font'
 import { usePower } from '../hooks/usePower'
+import { useHealth } from '../hooks/useHealth'
 import { useConfig } from '../hooks/useConfig'
 import { Panel } from '../components/layout/Panel'
 import { LEDIndicator } from '../components/analog/LEDIndicator'
+import { InstallServicePrompt } from '../components/shared/InstallServicePrompt'
 
 const mono: React.CSSProperties = { fontFamily: 'JetBrains Mono, monospace' }
 
@@ -45,6 +47,7 @@ function LevelBar({ value, max, color }: { value: number; max: number; color: st
 }
 
 export function BatteryModule() {
+  const { connected } = useHealth()
   const { data: power } = usePower()
   const { data: config, updateConfig } = useConfig()
 
@@ -70,7 +73,38 @@ export function BatteryModule() {
     await updateConfig({ battery: { ...config.battery, charge_limit_max_pct: { enabled: true, value: newVal } } })
   }
 
+  // First-time enable: seed from the EC's currently active limit when it has
+  // one (the service reports it via /power even before any config is set).
+  const enableLimit = async () => {
+    if (!config) return
+    const seed = bat?.charge_limit_max_pct && bat.charge_limit_max_pct < 100 ? bat.charge_limit_max_pct : 80
+    await updateConfig({ battery: { ...config.battery, charge_limit_max_pct: { enabled: true, value: seed } } })
+  }
+
   const socColor = soc != null && soc < 15 ? '#cc2222' : soc != null && soc < 30 ? '#c09060' : '#e8e0d0'
+
+  if (!connected) {
+    return (
+      <div style={{
+        height: '100%', background: 'var(--bg)',
+        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 14,
+      }}>
+        <span style={{ ...mono, fontSize: fs(12), color: 'var(--cream)', letterSpacing: '0.15em' }}>BATTERY HEALTH</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <LEDIndicator active color="#cc2222" size={8} />
+          <span style={{ ...mono, fontSize: fs(10), color: '#cc2222', letterSpacing: '0.1em' }}>
+            SERVICE OFFLINE — DATA UNAVAILABLE
+          </span>
+        </div>
+        <div style={{ ...mono, fontSize: fs(9), color: '#555555', textAlign: 'center', lineHeight: 1.9, maxWidth: 460 }}>
+          All telemetry and hardware control comes from the framework-control service.
+          Install it below (admin prompt), or check an existing install with{' '}
+          <span style={{ color: '#888888' }}>sudo systemctl status framework-control</span>.
+        </div>
+        <InstallServicePrompt />
+      </div>
+    )
+  }
 
   return (
     <div style={{ height: '100%', overflow: 'auto', background: 'var(--bg)', padding: '24px 32px' }}>
@@ -186,19 +220,27 @@ export function BatteryModule() {
                     <button onClick={() => handleLimitChange(+5)} style={nudgeBtn}>+</button>
                   </div>
                 </div>
-                {chargeLimit.enabled && (
+                {chargeLimit.enabled ? (
                   <>
                     <LevelBar value={chargeLimit.value} max={100} color="#2255aa" />
                     <div style={{ ...mono, fontSize: fs(9), color: '#333333', marginTop: 4 }}>
                       Battery will stop charging at {chargeLimit.value}%. Extends battery lifespan.
                     </div>
                   </>
+                ) : (
+                  <button onClick={enableLimit} style={{ ...enableBtn }}>ENABLE CHARGE LIMIT</button>
                 )}
               </>
             ) : (
-              <div style={{ ...mono, fontSize: fs(10), color: '#333333' }}>
-                Charge limit not available — requires framework-control service
-              </div>
+              <>
+                <div style={{ ...mono, fontSize: fs(10), color: '#555555', marginBottom: 10, lineHeight: 1.6 }}>
+                  No charge limit is configured yet.
+                  {bat?.charge_limit_max_pct != null && bat.charge_limit_max_pct < 100 && (
+                    <> The EC is currently limiting to {bat.charge_limit_max_pct}% (set outside this app).</>
+                  )}
+                </div>
+                <button onClick={enableLimit} style={{ ...enableBtn }}>ENABLE CHARGE LIMIT</button>
+              </>
             )}
           </div>
         </Panel>
@@ -249,4 +291,11 @@ const nudgeBtn: React.CSSProperties = {
   fontSize: fs(14), width: 28, height: 28, cursor: 'pointer',
   display: 'flex', alignItems: 'center', justifyContent: 'center',
   padding: 0, lineHeight: 1,
+}
+
+const enableBtn: React.CSSProperties = {
+  background: 'transparent', border: '1px solid #2255aa',
+  color: '#2255aa', fontFamily: 'JetBrains Mono, monospace',
+  fontSize: fs(9), letterSpacing: '0.08em', padding: '7px 12px',
+  cursor: 'pointer', borderRadius: 3,
 }

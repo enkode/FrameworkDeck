@@ -29,10 +29,11 @@
 **One app for everything your Framework laptop can show or do.**
 
 - **Live telemetry:** Temps, fan RPM, power draw, battery health on a real-time oscilloscope
-- **Hardware control:** TDP, thermal limit, fan curves, charge limit
+- **Hardware control:** TDP, thermal limit, fan curves, charge limit (with one-click backend install)
 - **Keyboard / Macropad:** Full VIA remapping, per-key RGB, firmware flashing
 - **LED Matrix:** Paint 306 LEDs, save patterns, animate
 - **Graphics** (Windows): dGPU diagnostics, Code 43 recovery, per-app GPU prefs (D4, Battle.net, etc.)
+- **Updates:** detects your exact Framework device, checks Framework's Knowledge Base for the latest vetted BIOS/driver bundle, compares against what's installed, and badges the nav when something new ships
 - **System info:** BIOS, EC firmware, hardware inventory
 
 Native Tauri app. Under 10 MB, no Electron, runs offline. Works on Framework Laptop 13, 16, and 12 (with caveats; see [Hardware Support](#hardware-support)).
@@ -60,8 +61,8 @@ Built with Tauri 2 + React 19 + TypeScript + Tailwind CSS. Lightweight native wi
 | **Windows 11/10** | `.exe` (NSIS) | Recommended for most Windows users |
 | **Windows 11/10** | `.msi` | Enterprise / managed deployments |
 | **Linux** (any distro) | `.AppImage` | Universal - `chmod +x` and run, no install needed |
-| **Debian / Ubuntu** | `.deb` | Native package - `sudo dpkg -i framework-deck_*.deb` |
-| **Fedora / RHEL** | `.rpm` | Native package - `sudo rpm -i framework-deck-*.rpm` |
+| **Debian / Ubuntu** | `.deb` | Native package - `sudo apt install ./Framework_Deck_*.deb` |
+| **Fedora / RHEL** | `.rpm` | Native package - `sudo dnf install ./Framework_Deck-*.rpm` |
 
 **For telemetry features** (oscilloscope, fan control, power, battery, system info): the [framework-control](https://github.com/ozturkkl/framework-control) service must be running. See [Setup](#setup).
 
@@ -70,12 +71,12 @@ Built with Tauri 2 + React 19 + TypeScript + Tailwind CSS. Lightweight native wi
 ### Linux Notes
 
 - **AppImage** is the easiest option: make it executable and run; works on any distro.
-- **WebHID** requires Chromium-based WebView. Most distros ship `webkit2gtk-4.1` which supports this; if the keyboard configurator can't connect, ensure `webkit2gtk-4.1` is installed.
+- **Keyboard configurator on Linux:** WebHID is Chromium-only and webkit2gtk (the Linux WebView) does not implement it. Use the VIA web configurator (usevia.app) in Chrome/Chromium to remap keys; keymaps live on the keyboard and apply everywhere.
 - **framework-control on Linux** uses `ectool` for hardware access. See the [framework-control Linux setup guide](https://github.com/ozturkkl/framework-control#linux).
 
 #### Wayland: `EGL_BAD_PARAMETER` or blank/beige window
 
-Framework Deck auto-sets `WEBKIT_DISABLE_DMABUF_RENDERER=1` on Linux so the webkit2gtk-4.1 DMA-BUF renderer doesn't try to negotiate EGL with recent Mesa. That combo is known to fail on KDE Wayland (e.g. CachyOS) and produce a beige or black window on launch.
+Framework Deck auto-sets `WEBKIT_DISABLE_DMABUF_RENDERER=1` on Linux desktops other than GNOME so the webkit2gtk-4.1 DMA-BUF renderer doesn't try to negotiate EGL with recent Mesa. That combo is known to fail on KDE Wayland (e.g. CachyOS) and produce a beige or black window on launch. GNOME keeps the GPU rendering path, which is verified working and uses about half the CPU of the software fallback.
 
 If the auto-workaround isn't enough, try one of these before relaunching:
 
@@ -271,6 +272,15 @@ Consolidates everything Windows can do for GPU mode/state management into one pa
 - **NVIDIA-SMI:** Raw output capture when the driver is healthy
 - Cross-vendor (NVIDIA + AMD), service status for `nvlddmkm` / `amdkmdag` shown in the header
 
+### Updates *(new in v2.3.0)*
+- **Knows your exact machine.** Reads the DMI/SMBIOS identity (Windows: WMI) to figure out which Framework device and generation you own, then checks Framework's official Knowledge Base for the latest vetted BIOS and Driver Bundle for that specific device
+- **Installed vs. latest BIOS**, side by side, with release dates, release notes, and direct download links (EXE + EFI zip)
+- **Driver Bundle components table.** Every driver inside the latest bundle (chipset, GPU, audio, WiFi, fingerprint, EC, and the rest) with its version and Framework's own "updated in this bundle" flag
+- **Windows: per-driver comparison.** Each bundle component is matched against your installed drivers and marked UPDATE AVAILABLE / CURRENT / NEWER. Handles vendor version quirks (NVIDIA's `32.0.15.9649` driver string is recognized as `596.49`)
+- **Linux: fwupd/LVFS aware.** Shows kernel and firmware inventory from fwupd, with the `fwupdmgr` commands for BIOS updates (Framework ships Linux BIOS updates through LVFS)
+- **Automatic daily check** on launch. When a newer BIOS ships for your device, a badge appears on the nav rail
+- **One-click backend install.** If the `framework-control` service is missing, every telemetry page offers to install it in-app: Linux downloads the release, verifies its SHA256, and enables the systemd service behind a single polkit prompt; Windows fetches the MSI and runs the installer
+
 ### Settings
 - 4 color themes: **REEL** (Teenage Engineering, cream/red/blue), **PHOS** (phosphor green, Tektronix), **AMBR** (HP amber terminal), **FW** (Framework blue)
 - Quick size presets: S / M / L / XL / XXL
@@ -347,17 +357,19 @@ chmod +x Framework_Deck_*.AppImage
 
 **Debian / Ubuntu:**
 ```bash
-sudo dpkg -i framework-deck_*_amd64.deb
+sudo apt install ./Framework_Deck_*_amd64.deb
 ```
 
 **Fedora / RHEL:**
 ```bash
-sudo rpm -i framework-deck-*-1.x86_64.rpm
+sudo dnf install ./Framework_Deck-*.x86_64.rpm
 ```
 
 ### 3: Connect a keyboard or macropad (optional)
 
-Open the **Keyboard** module, click **Connect Your Device**, and select your Framework keyboard or macropad from the device picker. WebHID requires a Chromium-based WebView (shipped with Tauri on both Windows and Linux).
+Open the **Keyboard** module, click **Connect Your Device**, and select your Framework keyboard or macropad from the device picker.
+
+> **Platform note:** device connection uses WebHID, a Chromium-only API. It works natively on Windows (WebView2). Linux's webkit2gtk WebView does not implement WebHID, so on Linux the app shows a guided fallback: use the VIA web configurator (usevia.app) in Chrome/Chromium for remapping. Keymaps are stored on the keyboard itself, so changes made there apply system-wide.
 
 ---
 
@@ -370,15 +382,16 @@ Open the **Keyboard** module, click **Connect Your Device**, and select your Fra
 - **Windows:** [Visual C++ Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/)
 - **Linux (Debian/Ubuntu):**
   ```bash
-  sudo apt install libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev \
-    patchelf libssl-dev libgtk-3-dev libayatana-appindicator3-dev \
-    libsoup-3.0-dev libjavascriptcoregtk-4.1-dev
+  sudo apt install libwebkit2gtk-4.1-dev librsvg2-dev patchelf libssl-dev \
+    libgtk-3-dev libayatana-appindicator3-dev libxdo-dev
   ```
 - **Linux (Fedora):**
   ```bash
-  sudo dnf install webkit2gtk4.1-devel libappindicator-gtk3-devel \
-    librsvg2-devel patchelf openssl-devel gtk3-devel
+  sudo dnf install webkit2gtk4.1-devel librsvg2-devel patchelf openssl-devel \
+    gtk3-devel libappindicator-gtk3-devel
   ```
+
+> **AppImage on Fedora/Arch hosts:** linuxdeploy's bundled `strip` chokes on modern RELR relocation sections (`unknown type [0x13] section '.relr.dyn'`). Build with `NO_STRIP=true npm run tauri build` if the AppImage step fails; deb/rpm are unaffected.
 
 ### Clone
 
@@ -387,7 +400,7 @@ git clone --recurse-submodules https://github.com/enkode/FrameworkDeck.git
 cd FrameworkDeck
 ```
 
-> The `--recurse-submodules` flag is required to clone the `framework-control` backend service alongside the app. If you already cloned without it, run `git submodule update --init`.
+> The `--recurse-submodules` flag is optional — it vendors the `framework-control` backend service source for reference and local backend development. The app itself builds without it.
 
 ### Dev
 

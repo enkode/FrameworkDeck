@@ -64,7 +64,7 @@ export function ColorPicker({ definition, selectedKeyIndices = [], onKeyColorCha
             const [, r, g, b] = match.map(Number);
             setColor({ r, g, b });
         }
-    }, [selectedKeyIndices, isPerKeyMode]);
+    }, [selectedKeyIndices, isPerKeyMode, keyColors]);
 
     // Global backlight color is no longer emitted to individual keys on the virtual keyboard.
     // Showing the VIA backlight color on every key was misleading — users thought it was

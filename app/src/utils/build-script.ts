@@ -372,15 +372,111 @@ try { Stop-Transcript | Out-Null } catch {}
 `;
 }
 
-export function downloadBuildScript(): void {
-    const script = generateBuildScript();
-    // Ensure Windows (CRLF) line endings for cmd.exe compatibility
-    const winScript = script.replace(/\n/g, '\r\n');
-    const blob = new Blob([winScript], { type: 'application/octet-stream' });
+/**
+ * Linux/macOS equivalent: a plain bash script. No MSYS needed — the qmk CLI
+ * installs into a local venv and compiles natively.
+ */
+export function generateLinuxBuildScript(): string {
+    return `#!/usr/bin/env bash
+# ============================================================
+# Framework Per-Key RGB Firmware Builder (Linux/macOS)
+# ============================================================
+set -euo pipefail
+
+step() { printf '\\n  [%s/5] %s\\n  ------------------------------------------------\\n' "$1" "$2"; }
+die()  { printf '\\n  ERROR: %s\\n' "$1" >&2; exit 1; }
+
+printf '\\n  ============================================\\n'
+printf '    Framework Per-Key RGB Firmware Builder\\n'
+printf '  ============================================\\n\\n'
+
+# Device selection with USB detection (Framework VID 32ac)
+ANSI_TAG=""; PAD_TAG=""
+if command -v lsusb >/dev/null 2>&1; then
+    lsusb -d 32ac:0012 >/dev/null 2>&1 && ANSI_TAG=" [CONNECTED]"
+    lsusb -d 32ac:0013 >/dev/null 2>&1 && PAD_TAG=" [CONNECTED]"
+fi
+printf '  Which device are you building firmware for?\\n\\n'
+printf '    [1] Framework 16 ANSI Keyboard%s\\n' "$ANSI_TAG"
+printf '    [2] Framework 16 RGB Macropad%s\\n\\n' "$PAD_TAG"
+read -rp '  Enter choice (1 or 2): ' CHOICE
+case "$CHOICE" in
+    1) KEYBOARD='framework/ansi';     OUTPUT='framework_ansi_default.uf2';;
+    2) KEYBOARD='framework/macropad'; OUTPUT='framework_macropad_default.uf2';;
+    *) die "Invalid choice '$CHOICE' — run again and enter 1 or 2";;
+esac
+
+step 1 'Checking prerequisites...'
+command -v git >/dev/null 2>&1 || die 'git not found — install it with your package manager'
+command -v python3 >/dev/null 2>&1 || die 'python3 not found — install it with your package manager'
+printf '    git: %s\\n    python3: %s\\n' "$(command -v git)" "$(command -v python3)"
+
+step 2 'Preparing firmware source code...'
+REPO_DIR="$HOME/qmk_firmware_fw16"
+if [ -d "$REPO_DIR/.git" ]; then
+    git -C "$REPO_DIR" pull --ff-only || printf '    (pull skipped)\\n'
+else
+    rm -rf "$REPO_DIR"
+    git clone ${REPO_URL} "$REPO_DIR"
+fi
+
+step 3 'Setting up QMK CLI (local venv)...'
+VENV_DIR="$HOME/.qmk_venv"
+[ -x "$VENV_DIR/bin/qmk" ] || {
+    python3 -m venv "$VENV_DIR"
+    "$VENV_DIR/bin/pip" install --quiet --upgrade pip qmk
+}
+export PATH="$VENV_DIR/bin:$PATH"
+qmk setup -H "$REPO_DIR" -y || true
+
+step 4 'Compiling firmware (this takes several minutes)...'
+cd "$REPO_DIR"
+qmk compile -kb "$KEYBOARD" -km default
+
+step 5 'Locating compiled firmware...'
+UF2=$(find "$REPO_DIR" -name "$OUTPUT" -newer "$REPO_DIR/.git" 2>/dev/null | head -1)
+[ -n "$UF2" ] || UF2=$(find "$REPO_DIR" -name "$OUTPUT" 2>/dev/null | head -1)
+[ -n "$UF2" ] || die "Build finished but $OUTPUT was not found under $REPO_DIR"
+
+DEST="$HOME/$OUTPUT"
+cp "$UF2" "$DEST"
+printf '\\n  ============================================\\n'
+printf '    BUILD SUCCESSFUL!\\n'
+printf '  ============================================\\n\\n'
+printf '    Firmware: %s\\n\\n' "$DEST"
+printf '  Next steps:\\n'
+printf '    1. Go back to the app and click "I have the .uf2 file"\\n'
+printf '    2. Follow the bootloader entry instructions\\n'
+printf '    3. Copy the .uf2 file to the RPI-RP2 drive\\n'
+printf '    4. Reconnect in the app to verify per-key RGB\\n\\n'
+`;
+}
+
+const isTauri = typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
+
+/**
+ * Deliver the build script to the user.
+ * In Tauri the file is written to ~/Downloads via a Rust command and the
+ * saved path is returned — webkit2gtk (Linux) has no download handler, so the
+ * blob-anchor trick silently does nothing there. Browser dev keeps the blob.
+ */
+export async function downloadBuildScript(platform: 'windows' | 'linux' | 'macos' | 'unknown'): Promise<string | null> {
+    const forWindows = platform === 'windows';
+    const filename = forWindows ? 'build-firmware.cmd' : 'build-firmware.sh';
+    const script = forWindows
+        ? generateBuildScript().replace(/\n/g, '\r\n') // CRLF for cmd.exe
+        : generateLinuxBuildScript();
+
+    if (isTauri) {
+        const { invoke } = await import('@tauri-apps/api/core');
+        return invoke<string>('save_to_downloads', { filename, contents: script });
+    }
+
+    const blob = new Blob([script], { type: 'application/octet-stream' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'build-firmware.cmd';
+    a.download = filename;
     document.body.appendChild(a);
     a.click();
     // Delay cleanup to ensure download initiates before URL is revoked
@@ -388,6 +484,7 @@ export function downloadBuildScript(): void {
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
     }, 150);
+    return null;
 }
 
 export { BUILD_TARGETS };

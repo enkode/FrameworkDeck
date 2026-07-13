@@ -439,6 +439,37 @@ export function KeyboardModule() {
       layerMappingLabel={layerMapping ? `${layerMapping.type}(${layerMapping.targetLayer})` : undefined}
       onCancelLayerMapping={() => setLayerMapping(null)}
     />
+  ) : !hid.isSupported ? (
+    <div className="w-full h-full flex flex-col items-center justify-center gap-6 text-center px-8">
+      <div className="space-y-2">
+        <h1 className="text-2xl font-bold text-cream tracking-tight">KEYBOARD CONFIGURATOR</h1>
+        <p className="text-sm text-cream-dim max-w-md">
+          WebHID is not available in this WebView.
+        </p>
+      </div>
+      <div className="text-xs text-cream-dim max-w-lg space-y-3 text-left leading-relaxed">
+        <p>
+          Device connection uses the WebHID API, which is only implemented in
+          Chromium engines. On Windows this app runs on WebView2 (Chromium) and
+          works natively; on Linux the system WebView (webkit2gtk) does not
+          support WebHID yet.
+        </p>
+        <p>
+          <span className="text-cream">Workaround on Linux:</span> open the VIA
+          web configurator (usevia.app) in Chrome or Chromium to remap keys.
+          Your keyboard stores its configuration on-device, so mappings made
+          there work everywhere.
+        </p>
+        <p>
+          If Chrome can't see the device, add a udev rule for Framework input
+          modules (VID 32AC) to /etc/udev/rules.d/:
+          <br />
+          <code className="text-cream">
+            KERNEL=="hidraw*", ATTRS{'{'}idVendor{'}'}=="32ac", MODE="0660", TAG+="uaccess"
+          </code>
+        </p>
+      </div>
+    </div>
   ) : (
     <div className="w-full h-full flex flex-col items-center justify-center gap-6 text-center">
       <div className="space-y-2">

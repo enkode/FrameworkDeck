@@ -2,7 +2,7 @@
   "name": "framework-deck",
   "productName": "Framework Deck",
   "private": true,
-  "version": "2.2.0",
+  "version": "2.3.0",
   "description": "The ultimate Framework laptop companion — system monitoring, keyboard configurator, fan control, power management, and more in one tool.",
   "type": "module",
   "scripts": {
@@ -15,8 +15,11 @@
     "tauri:build": "tauri build"
   },
   "dependencies": {
+    "@fontsource/inter": "^5.2.8",
+    "@fontsource/jetbrains-mono": "^5.2.8",
     "@tauri-apps/api": "^2.10.1",
     "@tauri-apps/plugin-log": "^2.8.0",
+    "@tauri-apps/plugin-opener": "^2.5.4",
     "@tauri-apps/plugin-store": "^2.4.2",
     "autoprefixer": "^10.4.27",
     "clsx": "^2.1.1",
@@ -39,7 +42,7 @@
     "@types/w3c-web-hid": "^1.0.6",
     "@types/w3c-web-serial": "^1.0.8",
     "@vitejs/plugin-react": "^5.1.1",
-"eslint": "^9.39.1",
+    "eslint": "^9.39.1",
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.4.24",
     "globals": "^16.5.0",

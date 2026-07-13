@@ -1,54 +1,77 @@
-"""Generate a gear/cog icon for Framework Deck as PNG + ICO."""
+"""Generate the Framework Deck app icon: black gear on the tan rounded tile.
+
+Matches the in-app nav-rail mark (black cog on #c09060, radius 6/32 of tile).
+Dependency-free: writes PNGs + ICO by hand. 3x3 supersampling for clean edges.
+"""
 import math, struct, zlib, os
 
-def gear_mask(size, teeth=8, outer_r=0.48, inner_r=0.32, hub_r=0.12, tooth_h=0.12):
-    """Return a 2D list of (r,g,b,a) tuples for a gear icon."""
-    cx = cy = size / 2
+TAN = (0xC0, 0x90, 0x60)
+BLACK = (0x0A, 0x0A, 0x0A)
+
+# Normalized geometry (coordinates in [-1, 1] across the tile)
+CORNER_R = 0.375   # rounded-rect corner radius (6/32 tile = 0.375 of half-size)
+MARGIN = 0.0       # tile fills the canvas
+TEETH = 8
+GEAR_OUTER = 0.36  # gear body radius
+TOOTH_H = 0.12     # teeth extend beyond the body
+HUB_R = 0.15       # center hole (tan shows through)
+TOOTH_WIDTH = 0.42 # fraction of one tooth period that is tooth
+
+
+def inside_rounded_rect(dx, dy):
+    ext = 1.0 - MARGIN
+    ax, ay = abs(dx), abs(dy)
+    if ax > ext or ay > ext:
+        return False
+    ix = ext - CORNER_R
+    if ax <= ix or ay <= ix:
+        return True
+    return math.hypot(ax - ix, ay - ix) <= CORNER_R
+
+
+def inside_gear(dx, dy):
+    dist = math.hypot(dx, dy)
+    if dist < HUB_R:
+        return False
+    if dist <= GEAR_OUTER:
+        return True
+    angle = math.atan2(dy, dx)
+    tooth_angle = (2 * math.pi) / TEETH
+    t = (angle % tooth_angle) / tooth_angle
+    in_tooth = t < TOOTH_WIDTH or t > (1 - TOOTH_WIDTH)
+    return in_tooth and dist <= GEAR_OUTER + TOOTH_H
+
+
+def tile_pixels(size, ss=3):
+    """RGBA rows, supersampled ss*ss per pixel."""
     px = []
+    step = 2.0 / (size * ss)
     for y in range(size):
         row = []
         for x in range(size):
-            dx = (x - cx) / (size / 2)
-            dy = (y - cy) / (size / 2)
-            dist = math.hypot(dx, dy)
-            angle = math.atan2(dy, dx)
-
-            # Rotate so teeth are symmetric
-            tooth_angle = (2 * math.pi) / teeth
-            norm_angle = angle % tooth_angle
-            t = norm_angle / tooth_angle  # 0..1 within one tooth period
-
-            # Square wave blending for tooth vs valley
-            tooth_width = 0.45
-            in_tooth = (t < tooth_width or t > (1 - tooth_width))
-            r_outer = outer_r + (tooth_h if in_tooth else 0)
-
-            if dist < hub_r:
-                # Hub hole (transparent)
-                a = 0
-            elif dist < inner_r:
-                a = 255
-            elif dist <= r_outer:
-                a = 255
-            else:
-                a = 0
-
-            if a > 0:
-                # Cream color #e8e0d0 with slight shading based on y
-                shade = 1.0 - 0.2 * (y / size)
-                r = int(232 * shade)
-                g = int(224 * shade)
-                b = int(208 * shade)
-                # Add highlight on top
-                if dy < -0.1 and dist > hub_r + 0.05:
-                    r = min(255, r + 30)
-                    g = min(255, g + 30)
-                    b = min(255, b + 30)
-                row.append((r, g, b, a))
-            else:
+            rect_hits = 0
+            gear_hits = 0
+            for sy in range(ss):
+                for sx in range(ss):
+                    dx = -1.0 + (x * ss + sx + 0.5) * step
+                    dy = -1.0 + (y * ss + sy + 0.5) * step
+                    if inside_rounded_rect(dx, dy):
+                        rect_hits += 1
+                        if inside_gear(dx, dy):
+                            gear_hits += 1
+            total = ss * ss
+            if rect_hits == 0:
                 row.append((0, 0, 0, 0))
+                continue
+            a = round(255 * rect_hits / total)
+            g_frac = gear_hits / rect_hits
+            r = round(BLACK[0] * g_frac + TAN[0] * (1 - g_frac))
+            g = round(BLACK[1] * g_frac + TAN[1] * (1 - g_frac))
+            b = round(BLACK[2] * g_frac + TAN[2] * (1 - g_frac))
+            row.append((r, g, b, a))
         px.append(row)
     return px
+
 
 def make_png(pixels):
     size = len(pixels)
@@ -56,12 +79,10 @@ def make_png(pixels):
         c = zlib.crc32(tag + data) & 0xFFFFFFFF
         return struct.pack('>I', len(data)) + tag + data + struct.pack('>I', c)
 
-    # IHDR: width(4) height(4) bitdepth(1) colortype(1) compression(1) filter(1) interlace(1)
     ihdr_data = struct.pack('>IIBBBBB', size, size, 8, 6, 0, 0, 0)
-
     raw = b''
     for row in pixels:
-        raw += b'\x00'  # filter type: none
+        raw += b'\x00'
         for r, g, b, a in row:
             raw += bytes([r, g, b, a])
 
@@ -71,8 +92,8 @@ def make_png(pixels):
     iend = png_chunk(b'IEND', b'')
     return signature + ihdr + idat + iend
 
+
 def make_ico(png_data_list):
-    """Wrap PNG images into an ICO file."""
     count = len(png_data_list)
     header = struct.pack('<HHH', 0, 1, count)
     offset = 6 + 16 * count
@@ -84,25 +105,22 @@ def make_ico(png_data_list):
     data = b''.join(d for _, d in png_data_list)
     return header + dirs + data
 
+
 out_dir = os.path.dirname(os.path.abspath(__file__))
 
 sizes = [16, 32, 48, 128, 256]
 pngs = {}
 for s in sizes:
-    px = gear_mask(s)
-    pngs[s] = make_png(px)
+    pngs[s] = make_png(tile_pixels(s))
     with open(os.path.join(out_dir, f'{s}x{s}.png'), 'wb') as f:
         f.write(pngs[s])
     print(f'Written {s}x{s}.png')
 
-# ICO contains 16, 32, 48, 256
-ico_sizes = [16, 32, 48, 256]
-ico = make_ico([(s, pngs[s]) for s in ico_sizes])
+ico = make_ico([(s, pngs[s]) for s in [16, 32, 48, 256]])
 with open(os.path.join(out_dir, 'icon.ico'), 'wb') as f:
     f.write(ico)
 print('Written icon.ico')
 
-# Also write 128x128@2x (just 256 renamed)
 with open(os.path.join(out_dir, '128x128@2x.png'), 'wb') as f:
     f.write(pngs[256])
 print('Written 128x128@2x.png')

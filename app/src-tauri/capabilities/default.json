@@ -3,6 +3,9 @@
   "description": "Default capability for Framework Deck main window",
   "windows": ["main"],
   "permissions": [
-    "core:default"
+    "core:default",
+    "store:default",
+    "log:default",
+    "opener:default"
   ]
 }
